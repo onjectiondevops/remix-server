@@ -1,0 +1,31 @@
+---
+meta:
+  title: Setup
+  description: Setup
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Setup...
+headers:
+  Cache-Control: no-cache
+---
+
+
+
+References: https://github.com/Godiswill/cra-crx-boilerplate
+
+- Go to chrome://extensions .
+- Click on developer mode switch on top right side to activate it.
+- Click on load unpacked button
+- Browse to build/assets folder
+- We don't need to zip the build.
+- Just need to browse to the folder that contains manifest.json file
+
+#Register Callback URl
+
+In order for authentication to work properly, its required to register a callback url in auth0 project
+- Copy your extension id from the extension list like shown below
+  
+![Extension ID](/images/extension.png)
+
+- Replace your extension id with extension-id in this url `https://<extension-id>.chromiumapp.org`
+- Set env in dev.env AUTH0_EXTENSION_REDIRECT_URL = `https://YOUR_EXTENSION_ID.chromiumapp.org`

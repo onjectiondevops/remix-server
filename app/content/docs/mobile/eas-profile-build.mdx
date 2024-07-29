@@ -1,0 +1,28 @@
+---
+meta:
+  title: Eas Profile Build
+  description: Eas Profile Build
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Eas Profile Build...
+headers:
+  Cache-Control: no-cache
+---
+
+## Eas Profile Build
+
+1. List the devices and if the device don't exist add the device usinge `eas device:create`
+
+![eas profile build](https://github-production-user-asset-6210df.s3.amazonaws.com/3382355/274200826-93063652-0672-435f-9f28-75a7a66df8bb.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20231017%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20231017T085330Z&X-Amz-Expires=300&X-Amz-Signature=58c740995aa7c7c0894da6858e216694c13b29b33695fabf3c277c83bd4a1909&X-Amz-SignedHeaders=host&actor_id=38552626&key_id=0&repo_id=436421601)
+
+2. move `.npmrc` to `.npmrc.bk` from root of the project, so the eas build wont' see this file.
+
+```
+mv .npmrc .npmrc.bk
+```
+
+3. run eas preview manually from the IDE
+
+![preview manually](https://github-production-user-asset-6210df.s3.amazonaws.com/3382355/274201603-b6c72e47-4bda-4446-b15d-bbea0e0f172b.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIWNJYAX4CSVEH53A%2F20231017%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20231017T085734Z&X-Amz-Expires=300&X-Amz-Signature=df7f5c4d4f859cb3baa542e7d7ab01624bcef88fe41aa9831317dbdafc0cce87&X-Amz-SignedHeaders=host&actor_id=38552626&key_id=0&repo_id=436421601)
+
+4. Revert back the file `.npmrc` from `.nprc.bk` do not commit this change.

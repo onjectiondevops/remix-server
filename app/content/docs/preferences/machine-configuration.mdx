@@ -1,0 +1,157 @@
+---
+meta:
+  title: Machine Configuration
+  description: Machine Configuration
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Machine Configuration...
+headers:
+  Cache-Control: no-cache
+---
+
+## Machine Configuration
+
+Configurtion that has dependency on the entity that is retrieved from the database.
+
+Example: If you have a Timesheet collection in Database and we need to store specific settings related for each timesheet. And these settings should overwrite the Organization Settings and give the final overwritten value.
+
+MachineConfiguration cannot be pulled directly from the Database, instead it should be pulled when the entity from the database is pulled.
+
+For Timesheet we store the data as following, with `settings` of required
+
+```
+{
+    "_id" : ObjectId("61e63058e34f63001cb26118"),
+    "timeRecordsId" : [
+        "61e63054e34f63001cb26113",
+        "61b03069a23ab5001b0846bc"
+    ],
+    "orgId" : "test-org-b",
+    "userId" : "google-oauth2|102797252772551296445",
+    "startDate" : ISODate("2021-12-05T18:30:00.000Z"),
+    "endDate" : ISODate("2021-12-12T18:30:00.000Z"),
+    "state" : "APPROVED",
+    "submittedOn" : ISODate("2022-01-18T03:13:28.212Z"),
+    "__v" : 0,
+    settings: {
+        "timetracker" : {
+            "timesheet" : {
+                "timeRoundingInTimesheet" : false
+            },
+            "project" : {
+                "roundedType" : "Round up to",
+                "roundedToNearest" : "1800"
+            }
+        }
+    }
+    "approvedBy" : "google-oauth2|102797252772551296445",
+    "approvedOn" : ISODate("2022-01-18T03:13:38.963Z"),
+    "updatedBy" : null,
+    "updatedOn" : ISODate("2022-01-18T03:13:38.963Z")
+}
+```
+
+The settings object when pulled from the graphql server, will be stored in Apollo Cache as
+`MachineConfiguration:/timesheets:id=61e63058e34f63001cb26118#settingsConfiguration`
+
+Inorder to store in cache as Settings URL, few changes have to be done in the resolver, you can check the resolver section.
+
+To get the effective settings value of `timeRoundingInTimesheet` we need to call `useSetting` as follows.
+
+```
+const externalResource = generateUri('timesheets', { _id }, 'settingsConfiguration');
+useSetting({ configKey: key, overrides: { resource: externalResource, externalResource: externalResource}, options: {
+    defaultFragment: IConfigurationContributionNames.TimeTracker
+}})
+
+```
+
+Note: Prior to it, we need to make sure `externalResource` related cache exists in the apollo cache. When the entity of timesheet is pulled this format the settings into `MachineConfiguration` using predefined id_mapper for MachineConfiguration.
+
+So when the `useSetting` get called with `externalResource` this won't call the backend instead check the apollo cache and returns the effect value.
+
+#### Storing in the backend.
+
+The settings are stored in the entity itself, so the input can have `settings` value inputed and in Mongo Model we define this fixed as `Mixed` Type.
+
+#### Schema
+
+Add `settingsConfiguration` field to the return type of the query that retrieves the data and it should of type `IMachineConfiguration` (this comes with base package). For example, here we call the `userQuery` to get the Timesheet data so add to it.
+
+```schema
+TimesheetResponse: {
+    ....
+    settingsConfiguration: IMachineConfiguration
+}
+
+```
+
+#### Resolver
+
+Add the resolver for field `settingsConfiguration`. Here we convert the `settings` object retrieved from the DB to `MachineConfiguration`
+
+```
+export const resolver = (options) => ({
+
+TimesheetResponse: {
+
+    settingsConfiguration(src, args, { configurationService }) {
+        const resource = generateUri('properties' as any, { name: src.name }, 'settingsConfiguration');
+            let data = '{}';
+            try {
+                data = JSON.stringify((src as any).settings);
+            } catch (err) {
+                console.log('---Errr---', err);
+            }
+            const machineModel = (configurationService as any).parser(resource.toString(), data);
+            return {
+                resource,
+                contents: machineModel.contents,
+                overrides: machineModel.overrides,
+                keys: machineModel.keys,
+                __typename: IClientCacheTypeNames.MachineConfiguration,
+            } as any;
+        },
+    }
+},
+Query: { ...},
+Mutation: {...},
+```
+
+#### Query
+
+Make sure to include the field in the Query result.
+
+![timesheet_query](/images/timesheet_query.png)
+
+#### Verify Apollo cache
+
+Verify apollo cache
+
+![timesheet_apollo_cache](/images/timesheet_apollo_cache.png)
+
+#### Get Settings
+
+```
+// first have the query run to populate apollo cache
+const { loading: skip, data } = getDurationTimesheets('....');
+
+// have the settings run with `externalResource` pointing to the `settingsConfiguration`
+const {
+    data: { resolveConfiguration } = {},
+    refetch: refetchConfig,
+    preferencesInput,
+    updateConfiguration,
+    loading,
+    error,
+} = useSetting({
+    configKey: key,
+    overrides: {
+        resource: timesheetResource,
+        externalResource: timesheetResource,
+    } as IConfigurationOverrides_Input,
+    options: {
+        defaultFragment: IConfigurationContributionNames.pubngProperty,
+    },
+});
+```

@@ -1,0 +1,40 @@
+---
+meta:
+  title: Mobile Jenkins Build
+  description: Mobile Jenkins Build
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Mobile Jenkins Build...
+headers:
+  Cache-Control: no-cache
+---
+
+1. Select the pipeline to run.
+
+eg: here we using `messenger-box`
+
+![messenger-box-pipeline](https://user-images.githubusercontent.com/3382355/236802390-26806466-d7e6-4774-95dc-9248daefebe6.png)
+
+2. Click on `Build with Parameters`
+
+![build Parameters](https://user-images.githubusercontent.com/3382355/236802500-caadae9f-bf5a-48f0-9582-4107652204a5.png)
+
+3. Update
+
+a) `REPOSIOTRY_BRANCH` fill with the the branch you want to test.
+
+b) Update ENV_CHOICE. Following are mobile build options available to select.
+
+- `mobileProdSubmit` : Will build prod app and submits to app store
+- `mobileProd`: Will build prod app but won't submit
+- `mobileBuild`: Will build and generate a tar file to use locally
+- `mobilePreview`: Will use dev environment, to build for preview
+- `mobileLocalPreview`: Will use dev enviornment to build a local preview.
+
+c) MOBILE_CHOICE
+
+- `ios`: builds for ios only
+- `android`: builds for android only
+- `all`: builds both ios and android
+
+![MOBILE CHOICE](https://user-images.githubusercontent.com/3382355/236803202-2c635b7e-eb49-4a63-91d2-cfa2ad187286.png)

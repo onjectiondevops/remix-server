@@ -1,0 +1,110 @@
+---
+meta:
+  title: Routes and Menus
+  description: Routes and Menus
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Routes and Menus...
+headers:
+  Cache-Control: no-cache
+---
+
+## Routes and Menu
+
+Both `routes` and `menu` are depend on the `routeConfig` provided to `Feature`.
+
+Menu have extends `Feature's routeConfiguration` such as name, icon, locale, hideInMenu, hideChildrenInMenu and other configuration, so that it is easier to generate menus in one place.
+
+Check how [routing](./routing.md) works before checking the menu.
+
+### Menu
+
+The data format it as follows.
+
+```js
+export interface IMenuDataItem {
+    /**
+     * @name submenu
+     */
+    children?: IMenuDataItem[];
+    /**
+     * @name Hide child nodes in the menu
+     */
+    hideChildrenInMenu?: boolean;
+    /**
+     * @name hideSelf and children in menu
+     */
+    hideInMenu?: boolean;
+    /**
+     * @name Icon of the menu
+     */
+    icon?: React.ReactNode;
+    /**
+     * @name Internationalization key for custom menus
+     */
+    locale?: string | false;
+    /**
+     * @name The name of the menu
+     */
+    name?: string;
+    /**
+     * @name is used to calibrate the selected value, default is path
+     */
+    key?: string;
+    /**
+     * @name disable menu option
+     */
+    disabled?: boolean;
+    /**
+     * @name path
+     */
+    path?: string;
+    /**
+     * @name custom parent node
+     * @description When this node is selected, the node of parentKeys is also selected
+     */
+    parentKeys?: string[];
+    /**
+     * @name hides itself and elevates child nodes to its level
+     */
+    flatMenu?: boolean;
+
+    /**
+     * @name position of the Menu
+     * @enum `IMenuPosition`
+     */
+    position?: IMenuPosition;
+
+
+    /**
+     * @name permissions to determine whether to render menu or not
+     */
+    authority?: string[];
+
+    /**
+     * @name priority of the menu to display in the order. Lower values shows first.
+     */
+    priority?: number;
+
+    [key: string]: any;
+}
+
+export enum IMenuPosition {
+    LOGO = 'LOGO',
+    UPPER = 'UPPER',
+    MIDDLE = 'MIDDLE',
+    LOWER = 'LOWER',
+    BOTTOM = 'BOTTOM',
+}
+
+```
+
+A layout can be designed to render the menus based on it.
+
+### Position of menu
+
+Menu position is provided with `position`. The layout is when rendering the menu able to seperate the menu based on the position where it customized to render.
+
+### Customize the content of the menu
+
+With `menuItemRedner`, `subMenuItemRender`, `title`, `logo`, `menuHeaderRender` you can customize the menu style very easily. If you are really not satisfied, you can use `menuRender` to fully customize it.

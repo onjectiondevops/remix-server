@@ -1,0 +1,131 @@
+---
+meta:
+  title: Keyboard Shortcuts
+  description: Keyboard Shortcuts
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Keyboard Shortcuts...
+headers:
+  Cache-Control: no-cache
+---
+
+## Keyboard Shortcuts
+
+# VSCODE Editor
+Ctl + n -> Next line
+
+Ctl + p -> Prev line
+
+Ctl + o -> insert above
+
+Ctl + b -> move cursor right
+
+Ctl + f -> move cursor left
+
+Ctl + d -> Delete letter
+
+Ctl + a -> Begin of line
+
+Ctl + e -> End of line
+
+
+CMD + { 1, 2, 3} -> to move between editors
+
+CMD + Tab -> To navigate between editors
+
+CMD + K, N -> To view probelems highlighted
+
+CMD + . -> To get quick suggestion
+
+Custome Key Binding, To switch between terminal and editor
+
+```
+// Place your key bindings in this file to override the defaultsauto[]
+[
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.terminal.focus"
+    },
+    {
+        "key": "ctrl+shift+t",
+        "command": "workbench.action.focusActiveEditorGroup",
+        "when": "terminalFocus"
+    }
+]
+```
+
+# VIM 
+
+hjkl -> left, down, up, right
+
+w -> next word start
+
+e -> next word end
+
+ge -> previous word end
+
+yw -> copy the word
+
+p -> paste after cursor
+
+P -> paste before cursor
+
+Movement by word
+
+b, B, e, E
+
+Movement by sentance
+
+( -> previous sentance begining
+
+) -> moves to the next end
+
+d) -> delete everything to end of sentance.
+
+2d) -> delete two sentance
+
+Movement by paragraph
+
+{ -> moves to the above paragraph
+
+} -> moves to below paragraph
+
+Intra-Line movement
+
+t -> before the search letter in the word
+
+f -> begining of search letter in the word
+
+Start and End of line jumps
+
+0 -> begining of line
+
+$ -> end of line
+
+I -> jumps to begining of the line with insert mode
+
+A -> jumps to end of the line with insert mode.
+
+vi{ or va{ or f{% -> to select the content between brackets.
+
+* Indent a block of code in vi by three spaces with Visual Line mode:
+
+    Open your file in VI.
+    Put your cursor over some code
+    Be in normal mode press the following keys:
+
+    `Vjjjj:le 3`
+
+    ** Interpretation of what you did: **
+
+    `V` means start selecting text.
+
+    `jjjj` arrows down 4 lines, highlighting 4 lines.
+
+    `:` tells vi you will enter an instruction for the highlighted text.
+
+    `le 3` means indent highlighted text 3 lines.
+
+# IO Simulator
+
+Ctl + Cmd + z

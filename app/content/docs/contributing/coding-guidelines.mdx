@@ -1,0 +1,101 @@
+---
+meta:
+  title: Coding Guidelines
+  description: Coding Guidelines
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Coding Guidelines...
+headers:
+  Cache-Control: no-cache
+---
+
+## Coding Guidelines
+
+
+## Intro
+
+These are CDEBase coding guidelines. Please also review our [Source Code Organisation](./source-code-organization.md) page.
+
+## Indentation
+We use tabs, not spaces.
+
+## Names
+* Use PascalCase for `type` names
+* Use PascalCase for `enum` values. If the `enums` generated from Graphql codegen then it should follow Graphql code style convention.
+* Use camelCase for `function` and `method` names
+* Use camelCase for `property` names and `local variables`
+* Use whole words in names when possible
+
+## Naming for Files and Directories
+* Name files after their default export. If that default export is a React Component, or a class, then the file name should be in `PascalCase`.
+* Otherwise, the filename should be in `camelCase`.
+* For naming files avoid using `kebab-case` and `snake_case` and make sure the name follows the default export of the file.
+* Naming directories should follow `kebab-case`. Except use `PascalCase` for directories when containing only React components:
+
+```
+components/CtaButton/index.ts
+import 'components/CtaButton'
+```
+
+or
+
+```
+components/CtaButton/CtaButton.tsx
+import 'components/CtaButton/CtaButton'
+```
+rather than
+
+```
+components/cta-button/CtaButton.tsx
+```
+
+## Import files order
+### browser side import order
+- react import (if it is .tsx file)
+- react based packages like react-redux, react-fela, chakra-ui ...
+- npm packages for js utils
+- @common, @admin, @pubngo packages..
+- ../../../package
+- ../../folder/
+- ./Component
+
+### server side import order is similar like
+- node packages first
+- @common-stack, @cdm, @pubngo ...
+- import from local path by far path first and near folder next
+
+## Types
+* Do not export `types` or `functions` unless you need to share it across multiple components
+* Do not introduce new `types` or `values` to the global namespace
+
+## Comments
+* Use JSDoc style comments for `functions`, `interfaces`, `enums`, and `classes`
+
+## Strings
+* Use "double quotes" for strings shown to the user that need to be externalized (localized)
+* Use 'single quotes' otherwise
+* All strings visible to the user need to be externalized
+
+## Style
+* Use arrow functions `=>` over anonymous function expressions
+* Only surround arrow function parameters when necessary. For example, `(x) => x + x` is wrong but the following are correct:
+
+```javascript
+x => x + x
+(x, y) => x + y
+<T>(x: T, y: T) => x === y
+```
+
+* Always surround loop and conditional bodies with curly braces
+* Open curly braces always go on the same line as whatever necessitates them
+* Parenthesized constructs should have no surrounding whitespace. A single space follows commas, colons, and semicolons in those constructs. For example:
+
+```javascript
+for (let i = 0, n = str.length; i < 10; i++) {
+    if (x < 10) {
+        foo();
+    }
+}
+
+function f(x: number, y: string): void { }
+```

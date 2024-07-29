@@ -1,0 +1,40 @@
+---
+meta:
+  title: Jest Test Debug
+  description: Jest Test Debug
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Jest Test Debug...
+headers:
+  Cache-Control: no-cache
+---
+
+## Jest Test Debug VScode
+
+1. Find the test file and test pattern you want to test.
+
+It is good to debug individual "test"
+
+for example:
+
+If I want to test only below
+
+![image](https://user-images.githubusercontent.com/3382355/234813745-c05bc64d-10c1-4257-95f4-8729aa9fc578.png)
+
+Using lerna we use following command
+
+`lerna exec --scope=<package_name> 'yarn test Configuration.test -- -t "Test update value"'`
+
+2. To test with vscode debugger update the package path and test args under `.vscode/launch.json`
+
+![image](https://user-images.githubusercontent.com/3382355/234815929-08111211-4d03-4117-865c-16b85e47fb23.png)
+
+3. And run the default test.
+
+Don't push the changes as it is for your internal testing only.
+
+![image](https://user-images.githubusercontent.com/3382355/234816355-280ba401-964f-48aa-930a-dae3fafba03d.png)
+
+4. Put debugger where you want to debug.
+
+![image](https://user-images.githubusercontent.com/3382355/234816878-d0eeb3aa-4bea-45b1-a7be-0f60d5e6251f.png)

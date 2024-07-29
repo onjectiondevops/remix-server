@@ -1,0 +1,30 @@
+---
+meta:
+  title: Frontend Coding
+  description: Frontend Coding
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Frontend Coding...
+headers:
+  Cache-Control: no-cache
+---
+
+## Frontend Coding
+
+* **Avoid using promises in the React Components:**
+
+There are many ways to avoid using promises in UI. We use the promises in the services but not in the React UI. Here is good blog on how to avoid promises using Hooks when using apollo-react.
+
+https://www.freecodecamp.org/news/react-apollo-client-2020-tutorial/
+
+* **Synchronous Code only:** Don't write any asynchronous code (avoid promises, await) directly in the UI. Use libraries such as [React Query](https://react-query.tanstack.com/overview) to better manage the asynchronous code. 
+
+* **No Expansive code:** Don't write expensive code with `react` components that would take full state
+    
+    If you ever need to take a full state either from `redux` or `apollo-client` and further computed within the component would result in bad 
+    performance. 
+    1. If the `state` has nested objects which cause the props to more prone to changes causing unwanted Component rendering.
+
+    2. this code won't be reusable. 
+
+    So in that case, use [selectors](https://github.com/reduxjs/reselect) and inject them into props so it resolves the above-mentioned issues.

@@ -1,0 +1,27 @@
+---
+meta:
+  title: Setting up stripe locally
+  description: Setting up stripe locally
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Setting up stripe locally...
+headers:
+  Cache-Control: no-cache
+---
+
+## Setting up stripe locally
+
+### Handling requests from Stripe
+
+We use `webhooks` to listen to stripe event that required to update the flow in our backend. For this
+we need to make sure to run the webhook locally.
+
+In our node server, we listen to webhook events at `/webhook/stripe` so the url will be `<backend_url>/webhook/stripe`
+
+Follow the steps in the https://stripe.com/docs/webhooks/quickstart go to the section `Test the webhook`.
+
+1. Update the webhook in the Stripe Developer console to it. For example `http://localhost:8080/webhook/stripe`
+
+2. Download stripe cli and login to it
+
+3. Now perform any plan subscription in the billing to check events are used in the node environment.

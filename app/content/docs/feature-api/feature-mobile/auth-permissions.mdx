@@ -1,0 +1,20 @@
+---
+meta:
+  title: Auth and Permissions
+  description: Auth and Permissions
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Auth and Permissions...
+headers:
+  Cache-Control: no-cache
+---
+
+## Auth and Permissions
+
+We have recently introduced the support of authentication wrapper to react navigation wrapper. The auth wrapper takes the two arguments One is the Component it self and other is the Unauthenticated Component, it validates if user is authenticated, if yes then it renders the component otherwise it checks if Unauthenticated component is passed then it renders that else it redirect to login
+
+![Auth Permissions](https://user-images.githubusercontent.com/30002668/204158578-873ac3b9-792b-4ef8-a130-8c87228af06d.png)
+
+In order to setup auth permission to route object you need to set property `auth: true`, you can also pass unauthenticated component as shown below
+
+![setup](https://user-images.githubusercontent.com/30002668/204159871-49c03aa1-6ff3-4c5e-b6da-01bd307a20b3.png)

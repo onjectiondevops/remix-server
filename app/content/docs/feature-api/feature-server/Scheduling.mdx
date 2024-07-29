@@ -1,0 +1,45 @@
+---
+meta:
+  title: Scheduling / Cron Jobs
+  description: Scheduling / Cron Jobs
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Scheduling / Cron Jobs...
+headers:
+  Cache-Control: no-cache
+---
+
+## Scheduling / Cron Jobs
+
+## What are Cron Jobs
+Cron jobs are scheduled tasks that are run automatically at specified intervals. Cron jobs are an essential component of many applications and software systems. They allow developers and system administrators to schedule and automate recurring tasks that need to be performed on a regular basis. These tasks can be anything from running a script to sending an email to cleaning up temporary files.
+
+For example, an e-commerce website might use a cron job to perform a daily inventory update, which would update the stock levels of each product based on the sales from the previous day. A social media platform might use a cron job to generate a weekly activity report for each user, which would summarize their engagement with the platform over the past week.
+Cron jobs are needed in applications because they provide a reliable and efficient way to automate repetitive tasks, reducing the workload on human operators and improving the overall efficiency of the system. They can also help ensure that critical tasks are performed on time, reducing the risk of errors or delays that could impact the user experience.
+
+In summary, cron jobs are an important tool for developers and system administrators that can help improve the performance, reliability, and functionality of an application.
+
+
+## Adding a Cron Job
+
+There are numerous ways to add cron jobs to your Node JS application, we are defining them
+using the [Moleculer Services](https://moleculer.services/). Creating cron jobs is simple using the
+Moleculer Service and [Cron Tasker](https://www.npmjs.com/package/@skoropletov/moleculer-cron-tasks.
+
+
+```typescript
+this.broker.createService({
+  name: 'cron-service', // Name of Moleculer Service
+  mixins: [CronTasks], // Cron Tasker Plugin to enable Cron Jobs
+  tasks: [
+    {
+      name: 'log-seconds', // Cron Task Name
+      cronTime: '* * * * * *', // Unix Cron Schedule
+      callback: (): void => { // Call back function to run on each job
+        console.log('[!] second passed');
+      },
+    }
+  ]
+});
+```
+

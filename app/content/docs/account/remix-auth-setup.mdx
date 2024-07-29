@@ -1,0 +1,27 @@
+---
+meta:
+  title: Remix Auth Setup 
+  description: Remix Auth Setup 
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Remix Auth Setup ...
+headers:
+  Cache-Control: no-cache
+---
+
+# Remix Auth Setup
+
+Inorder to setup authentication and use remix strategy for chakra we only need to make changes in login route and make sure the rest of functionality remains same i.e call to web-authentication (user-auth0-browser) service to initiate login with auth0.
+
+```
+export const loader = async ({ request, context }) => {
+  const module = await import('@adminide-stack/user-auth0-client/lib/helpers/auth-session-state-helper.js')
+  const authRedirectionalModule = await import('@adminide-stack/user-auth0-client/lib/helpers/auth-redirection-helper.js')
+  await authRedirectionalModule.redirectOrRemoveCookieIfAuthenticated(request, context);
+  return module.authSetSessionState(request);
+}
+```
+
+This loader will make sure that before login page is rendered the state parameter is added in the url which will be used to setup the initial session cookie and the value will be compared once result come back at callback page.
+
+Make sure to register RemixCallbackComponent from `adminIde-stack/packages-modules/user-auth0/browser/src/components/Callback/RemixAuthCallback.tsx` as `/callback` route.

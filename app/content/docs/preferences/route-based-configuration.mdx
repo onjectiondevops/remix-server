@@ -1,0 +1,41 @@
+---
+meta:
+  title: Route Based Configuration
+  description: Route Based Configuration
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Route Based Configuration...
+headers:
+  Cache-Control: no-cache
+---
+
+## Route based configuration
+
+Based on the URL route, we pull the `orgName` which is useful to pull the configuration resources to build `configurationService`.
+
+ConfigurationService methods such as `getValue` will give the merge of all the above settings in that order.
+
+Default Configuration will be overwritten by User Configuration and User Configuration will be overwritten by Organization Configuration and follows the order for Resource Configuration.
+
+`Resource Configuration` are related to specific `url` path within that organization that may have it's own configuration.
+
+Here is a small example:
+Organization can have multiple Teams. Each Team can have it's own Configuration. In this case, a resource configuration is created for each Team and when requesting the configuration value we need to provide the team resource URI path like:
+
+```
+getValue('organization.team.visibility', { resource: 'mongo-db-file:///team/<teamId>/settings })
+
+--check its interface
+    getValue<T>(section: string, overrides: IConfigurationOverrides): T;
+
+```
+
+The `overrides` parameter will take the resource and overrides the resulted organizationConfiguration with the `resourceConfiguration` value and gives the final `value`.
+
+`orgName` is stateless and will be placed in the url for tracking the page and its configuration to be loaded.
+
+Based on the following sample url, the route path that is used to generate is `/o/:orgName/teams/dashboard` and params value is `orgName` is `testorg`. Based on this `orgName`, we reload the configuration with `oraganizationContextService.initialize(<orgName>)` which eventually will load configurationService based on that specific organization.
+
+```
+https://idefront-adminide-v1.cdebase.io/teams/testorg/dashboard
+```

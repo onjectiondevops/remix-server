@@ -1,0 +1,116 @@
+---
+meta:
+  title: Repositories
+  description: Repositories
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Repositories...
+headers:
+  Cache-Control: no-cache
+---
+
+## Repositories
+
+Repositories are classes or components that encapsulate the logic required to access data sources. They centralize common data access functionality, providing better
+maintainability and decoupling the infrastructure or technology used to access databases from the domain model layer. If you use an Object-Document Mapper (ODM) like 
+Mongoose, the code required to query or manipulate the documents is simplified. This lets you focus on the data persistence logic rather than on data access plumbing.
+
+For every document in our app, we'll have a respective repository against that document. Document shouldn't be fetched directly without `Repository` doing
+this will be considered `Anti Pattren` and should be avoided. All use cases related to how the app will `fetch` `manipulate` and `process`a document
+should reside inside the `Repository` of that respective document.
+
+All basic database operations which we normally need to perform on a `Document` like the basic CRUD operations are already defined inside the `BaseRepository` class.
+So you need to re-write the basic stuff and focus more on advance stuff. Each repository should extend the `BaseRepository` so it can 
+benefit from all these pre cooked methods.
+
+The methods provided by `BaseRepositiry` are following
+
+```typescript
+export interface IBaseRepository<T, D = Document<T>> {
+    // Returns the total document count which fullfils the provided condition
+    count(conditions?: FilterQuery<D>): Promise<number>;
+
+    // Returns the list of documents which fullfils the provided condition (if any)
+    // Provides out of box paginaytion using `limit` and `skip` params
+    // sort attribute can be used to get sorted results
+    // selected fields takes a comma serperated strinh of fields name to be returned.
+    getAll(options: GetAllArgs<D>): Promise<T[]>;
+    
+    // Returns single document
+    get(conditions?: FilterQuery<D>, selectedFields?: string): Promise<T>;
+
+    // Creates new document
+    create<I>(data: I): Promise<T>;
+
+    // Create/Update (If already exists) new document
+    upsert<I>(conditions: FilterQuery<D>, update: I, options: any): Promise<T>;
+
+    // Update existing document
+    update<I>(criteria: FilterQuery<D>, update: UpdateQuery<D>, options?: any): Promise<T>;
+
+    // Update all docuemnts which matches the provdied conditions
+    bulkUpdate<I>(criteria: FilterQuery<D>, update: UpdateQuery<D>, options?: any): Promise<T[]>;
+
+    delete(criteria: FilterQuery<D>): Promise<boolean>;
+    
+    // Bulk Create provided documents
+    bulkCreate<I>(data: I[]): Promise<T[]>;
+
+    // Delete all documets which matches the criteria
+    bulkDelete(criteria: FilterQuery<D>): Promise<number>;
+}
+
+
+
+export enum ISortEnum {
+    Asc = 'ASC',
+    Desc = 'DESC'
+}
+
+export type ISort = {
+    key: Scalars['String'];
+    value: ISortEnum;
+};
+
+export interface GetAllArgs<T> {
+    criteria?: FilterQuery<T>;
+    sort?: ISort;
+    skip?: number;
+    limit?: number;
+    selectedFields?: string;
+}
+
+```
+
+### Example
+If you have a document named `User` you should define both `Repository` class and interface against it like the following
+
+```typescript
+export type IUserRepository = IBaseRepository<IUser>
+```
+
+```typescript
+import { BaseRepository, IMongoOptions } from '@common-stack/store-mongo';
+import { inject, injectable, optional } from 'inversify';
+import { Connection } from 'mongoose';
+import { logger as Logger } from '@cdm-logger/server/lib/logger';
+import { UserModelFunc } from '../models';
+
+@injectable()
+export class UserRepository extends BaseRepository<IUser> implements IUserRepository {
+    constructor(
+        @inject('MongoDBConnection')
+            db: Connection,
+        @inject('Logger')
+            logger: typeof Logger,
+        @inject('IMongoOptions')
+        @optional()
+            options?: IMongoOptions,
+    ) {
+        super(UserModelFunc, db, logger, options);
+    }
+}
+```
+
+After creating the `Repository` class, the next step is to register it with the [Dependency Injection](dependency-injection) so It can be injected easily everywhere in the app.
+After creating repository, the next step is to add [Service](services)

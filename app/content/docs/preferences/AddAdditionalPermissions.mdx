@@ -1,0 +1,157 @@
+---
+meta:
+  title: Add Additional Permissions
+  description: Add Additional Permissions
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Add Additional Permissions...
+headers:
+  Cache-Control: no-cache
+---
+
+## Add Additional Permissions
+
+For adding new permissions, following permissions scopes can be used
+
+- Account
+- Organization
+
+![Alt text](/images/image.png)
+
+Pre defined roles are added by default with selected permissions values and you can import as below
+
+```ts
+import { IPermissionType, IPreDefinedRole } from "@adminide-stack/core";
+
+const RoleContribution = {
+  [IPreDefinedRole.ADMIN]: {
+    "accounts.inviteMember": IPermissionType.Allow,
+    "general.createProjects": IPermissionType.Allow,
+    "general.deleteProjects": IPermissionType.Allow,
+  },
+};
+```
+
+### For adding new permissions in account or organization scope
+
+Step1: Create a file for defining permissions.
+
+Example (`packages/messenger-platform/server/src/constants/pre-define-inbox-permission.ts`)
+
+```ts
+export enum IPreDefineInboxPermissions {
+  viewPosts = "organization.inbox.posts.view",
+  createPost = "organization.inbox.posts.create",
+}
+```
+
+Step2: Create permissions contribution file under preferences permissions folder.
+
+Example (`packages/messenger-platform/server/src/preferences/permissions/inbox-permission-contribution.ts`)
+
+```ts
+import { ConfigurationScope, IPermissionType } from "@adminide-stack/core";
+import * as nls from "@vscode-alt/monaco-editor/esm/vs/nls";
+import { IRoles } from "@common-stack/server-core";
+import { IPreDefineInboxPermissions } from "../../constants";
+
+const extraParams = {
+  type: "string",
+  enum: [IPermissionType.Allow, IPermissionType.Deny, IPermissionType.NotSet],
+  default: IPermissionType.NotSet,
+  scope: ConfigurationScope.WINDOW,
+};
+
+export const InboxPermissionsContribution: IRoles<ConfigurationScope> = {
+  [IPreDefineInboxPermissions.viewPosts]: {
+    enumDescriptions: [
+      nls.localize(
+        `${IPreDefineInboxPermissions.viewPosts}.${IPermissionType.Allow}`,
+        "Has ability to view posts."
+      ),
+      nls.localize(
+        `${IPreDefineInboxPermissions.viewPosts}.${IPermissionType.Deny}`,
+        "No ability to view posts."
+      ),
+    ],
+    description: nls.localize(
+      IPreDefineInboxPermissions.viewPosts,
+      "View  Posts"
+    ),
+    ...extraParams,
+  },
+  [IPreDefineInboxPermissions.createPost]: {
+    enumDescriptions: [
+      nls.localize(
+        `${IPreDefineInboxPermissions.createPost}.${IPermissionType.Allow}`,
+        "Has ability to create post."
+      ),
+      nls.localize(
+        `${IPreDefineInboxPermissions.createPost}.${IPermissionType.Deny}`,
+        "No ability to create post."
+      ),
+    ],
+    description: nls.localize(
+      IPreDefineInboxPermissions.createPost,
+      "Create Post"
+    ),
+    ...extraParams,
+  },
+};
+```
+
+Step3: Create roles permission overwrite file under preferences permissions folder.
+
+Example (`packages/messenger-platform/server/src/preferences/permissions/inbox-roles-permission-overwrite.ts`)
+
+```ts
+import { IPermissionType, IApplicationRoles } from "@adminide-stack/core";
+import { IPreDefineInboxPermissions } from "../../constants";
+
+export const InboxRolesPermissionOverwrite = {
+  [IApplicationRoles.Admin]: {
+    [IPreDefineInboxPermissions.viewPosts]: IPermissionType.Allow,
+    [IPreDefineInboxPermissions.createPost]: IPermissionType.Allow,
+  },
+  [IApplicationRoles.Member]: {
+    [IPreDefineInboxPermissions.viewPosts]: IPermissionType.Allow,
+    [IPreDefineInboxPermissions.createPost]: IPermissionType.Deny,
+  },
+};
+```
+
+Step4: Import and add permissions to module.
+
+Example (`packages/messenger-platform/server/src/module.ts`)
+
+```ts
+import { Feature } from '@common-stack/server-core';
+import { schema, messengerResolvers } from './graphql';
+import { serviceContainerModule, proxyServiceContainerModule, contextServicesFromContainer } from './containers';
+import {
+    PostMoleculerService,
+    ...
+} from './plugins';
+import { InboxRolesPermissionOverwrite, InboxPermissionsContribution } from './preferences';
+
+export default new Feature({
+    schema,
+    createContainerFunc: [proxyServiceContainerModule],
+    createHemeraContainerFunc: [serviceContainerModule],
+    createResolversFunc: messengerResolvers,
+    createServiceFunc: contextServicesFromContainer,
+    addPermissions: {
+        createPermissions: [InboxPermissionsContribution],
+    },
+    rolesUpdate: {
+        overwriteRolesPermissions: InboxRolesPermissionOverwrite,
+    },
+    addBrokerClientServiceClass: [
+        PostMoleculerService,
+        ...
+    ],
+    addBrokerMainServiceClass: [],
+});
+```
+
+Build package and restart server

@@ -1,0 +1,72 @@
+---
+meta:
+  title: Roles & Permissions
+  description: Roles & Permissions
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Roles & Permissions...
+headers:
+  Cache-Control: no-cache
+---
+
+## Roles & Permissions
+
+Following Permissions scopes can be used. Each module can add permissions to the permission contributions.
+
+- Organization/Window Permissions
+- Resource Permissions
+
+### Pre defined roles
+
+Pre defined roles are added by default with selected Permissions values.
+
+**_ note _** It is hard coded in [here](https://github.com/cdebase/adminide-stack/blob/79cd0d746c9a116f1807b1d8a2a61ade8b611d48/packages-modules/account-api/server/src/roles/accounts-roles.ts#L44)
+
+In the UI, user will get the permissions based on his role in the organization.
+
+His organization role can be seen in the apollo cache as `OrganizationRole:/organizations:name=<org name>
+`.
+
+User updated permissions are stored in specific collection under `roles`.
+
+A role can be added at the resource level for the same user which overrides his organization role's permission.
+
+If the resource level permission is not set, it's value is inherited from the organization level.
+
+At the database side, the collection that is used will be usually `organizations` but if the user updates at resource level then it will be stored in that respective resource.
+
+Following query helps to get the organization level permission.
+
+```gql
+query GetRoleValue($key: String, $overrides: ConfigurationOverrides_Input) {
+  getPermissionValue(key: $key, overrides: $overrides) @client(always: true)
+}
+
+variables:
+{ "key": "accounts.inviteMember" }
+```
+
+Result
+
+```
+{
+  "data": {
+    "getPermissionValue": "Allow"
+  },
+  "loading": false,
+  "networkStatus": 7,
+  "stale": false
+}
+```
+
+If it needs resource level, we need to add `overrides` in the variables with the rsource uri.
+
+At the server side, the following query can be used to get the user's permissions based on his role.
+
+```gql
+query {
+  getViewerPermissions(input: { resource: "mongo-db-file:/teams?orgName%3Dstackflow-1%26name%3DNiceTeam2#settings", target: 5, roleName: "ADMIN"}) {
+  permissions
+    roleURL
+  }
+```

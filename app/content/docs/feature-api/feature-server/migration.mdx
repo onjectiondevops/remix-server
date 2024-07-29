@@ -1,0 +1,128 @@
+---
+meta:
+  title: Migrations
+  description: Migrations
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Migrations...
+headers:
+  Cache-Control: no-cache
+---
+
+## Migration
+
+
+
+## Add migration id
+Migrtion Id should be unique and usually it follow date version for example `<MIGRATION_NAME>_<yyyymmdd>`. Migration script only runs once and it stores the migration id in the database, if you need to rerun the migration you need to change the version by updating `yyyymmdd`.
+
+## Add `up/down` scripts to execute
+
+### up is for loading
+
+### down is for unloading. 
+
+In this example, we are renaming `status` field in Property.
+
+```
+
+// MongoDB field to update
+const fieldToUpdate = 'status';
+
+// Update values mapping
+const updateMapping = {
+  CREATED: 'created',
+  LISTED: 'listed',
+  INCOMPLETE: 'incomplete'
+};
+
+/**
+ * Updates the "status" field in a collection from "CREATED" to "created" and from "LISTED" to "listed":
+ */
+@injectable()
+export class PropertyStatusMigration {
+    private readonly logger: CdmLogger.ILogger;
+
+    constructor(
+        @inject(TYPES.PropertyRepository)
+        private propertyRepository: IBaseRepository<IPropertyType>,
+        @inject('Logger')
+        logger: CdmLogger.ILogger,
+    ) {
+        this.logger = logger.child({ className: PropertyStatusMigration.name });
+    }
+
+    get id(): string {
+        return 'PropertyStatusMigration_20230603';
+    }
+
+    get data(): IPropertyTypeInput[] {
+        return propertyTypes;
+    }
+
+    async up(): Promise<void> {
+        await this.down();
+        this.propertyRepository.bulkUpdate(    { [fieldToUpdate]: { $in: ['CREATED', 'LISTED', 'INCOMPLETE'] } },
+        [
+          {
+            $set: {
+              [fieldToUpdate]: {
+                $cond: {
+                  if: { $eq: [`$${fieldToUpdate}`, 'CREATED'] },
+                  then: updateMapping.CREATED,
+                  else: {
+                    $cond: {
+                      if: { $eq: [`$${fieldToUpdate}`, 'LISTED'] },
+                      then: updateMapping.LISTED,
+                      else: updateMapping.INCOMPLETE
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        function(err, result) {
+          if (err) {
+            this.logger.error('Error updating documents:', err);
+          } else {
+            this.logger.debug('Documents updated successfully.');
+          }
+        })
+        this.logger.info(`PropertyStatusMigration_20230603 Property Status migration done!`);
+    }
+
+    async down(): Promise<void> {
+        this.logger.info(`Nothing to do`);
+    }
+}
+
+```
+
+Migration scritp runs when the backend server start and it runs `down` first before `up` script.
+
+## Bind to Migration Container
+
+```
+/**
+ * Local services and exposed microservices to serve remote connections.
+ * Operates within in the Gateway.
+ *
+ */
+export const localContainerModule: (settings) => interfaces.ContainerModule = () =>
+    new ContainerModule((bind: interfaces.Bind) => {
+        ..... rest of the code ...
+        bind('MongodbMigration').to(PropertyStatusMigration).whenTargetNamed(PropertyStatusMigration.name);
+    
+    });
+ ```
+
+## Add to the feature
+
+```
+export default new Feature(
+    {
+       ... rest...
+        createContainerFunc: [localContainerModule],
+    });
+```

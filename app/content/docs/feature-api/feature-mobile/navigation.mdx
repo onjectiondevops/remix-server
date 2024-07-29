@@ -1,0 +1,187 @@
+---
+meta:
+  title: Navigation
+  description: Navigation
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Navigation...
+headers:
+  Cache-Control: no-cache
+---
+
+## Navigation
+
+## Configuring Navigation
+
+Configure through `routeConfig` in the configuration file, the format is an object of routing information.
+
+```js
+const routerConfig1: IRouteData = {
+  ["/"]: {
+    exact: false,
+    container: createStackNavigator(),
+    name: "MainStack",
+    props: {
+      initialRouteName: "Guest",
+      screenOptions: {
+        headerShown: false,
+      },
+    },
+  },
+  ["//guest"]: {
+    container: createBottomTabNavigator(),
+    exact: false,
+    name: "Guest",
+    props: {
+      initialRouteName: "Home",
+      screenOptions: {
+        headerShown: false,
+        tabBarLabel: "About",
+        // tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
+      },
+    },
+  },
+  ["//guest/home"]: {
+    name: "Home",
+    props: {
+      initialParams: {},
+      component: MyComponent,
+      options: {
+        headerShown: true,
+        tabBarLabel: "Home",
+        headerTitle: "Home",
+        // tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />,
+      },
+    },
+  },
+  ["//guest/about"]: {
+    exact: false,
+    container: createStackNavigator(),
+    name: "About",
+    props: {
+      initialRouteName: "Hello",
+    },
+  },
+  ["//guest/about/hello"]: {
+    name: "Hello",
+    props: {
+      initialParams: {},
+      component: MyComponent,
+      options: {
+        headerTitle: "About",
+      },
+    },
+  },
+  ["//guest/about/personalinfo"]: {
+    name: "PersonalInfo",
+    props: {
+      initialParams: { name: "Test" },
+      component: MyComponent,
+      options: {
+        headerTitle: "Personal Info",
+      },
+    },
+  },
+  ["//setting"]: {
+    name: "Setting",
+    props: {
+      initialParams: {},
+      component: MyComponent,
+      options: {
+        headerShown: true,
+        headerTitle: "Settings",
+        headerBackTitle: "Back",
+      },
+    },
+    exact: false,
+  },
+};
+```
+
+It generates
+
+```js
+<StackNavigator
+  initialRouteName="Guest"
+  screenOptions={
+    Object {
+      "headerShown": false,
+    }
+  }
+>
+  <Screen
+    name="MainStack.Guest"
+  >
+    <BottomTabNavigator
+      initialRouteName="Home"
+      screenOptions={
+        Object {
+          "headerShown": false,
+          "tabBarLabel": "About",
+        }
+      }
+    >
+      <Screen
+        initialParams={Object {}}
+        name="MainStack.Guest.Home"
+        options={
+          Object {
+            "headerShown": true,
+            "headerTitle": "Home",
+            "tabBarLabel": "Home",
+          }
+        }
+      >
+        [Function]
+      </Screen>
+      <Screen
+        name="MainStack.Guest.About"
+      >
+        <StackNavigator
+          initialRouteName="Hello"
+        >
+          <Screen
+            initialParams={Object {}}
+            name="MainStack.Guest.About.Hello"
+            options={
+              Object {
+                "headerTitle": "About",
+              }
+            }
+          >
+            [Function]
+          </Screen>
+          <Screen
+            initialParams={
+              Object {
+                "name": "Test",
+              }
+            }
+            name="MainStack.Guest.About.PersonalInfo"
+            options={
+              Object {
+                "headerTitle": "Personal Info",
+              }
+            }
+          >
+            [Function]
+          </Screen>
+        </StackNavigator>
+      </Screen>
+    </BottomTabNavigator>
+  </Screen>
+  <Screen
+    initialParams={Object {}}
+    name="MainStack.Setting"
+    options={
+      Object {
+        "headerBackTitle": "Back",
+        "headerShown": true,
+        "headerTitle": "Settings",
+      }
+    }
+  >
+    [Function]
+  </Screen>
+</StackNavigator>
+```

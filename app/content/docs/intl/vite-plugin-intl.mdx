@@ -1,0 +1,113 @@
+---
+meta:
+  title: Internationalization
+  description: Internationalization
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Internationalization...
+headers:
+  Cache-Control: no-cache
+---
+
+## Internationalization
+
+For internationalization we are using https://www.npmjs.com/package/react-i18next. Along with this we are vite plugin https://github.com/reboxjs/vite-plugin-i18next-loader for combining localization files across different packages.
+
+# Usage And Implementation
+
+Each package has to define its own localization files inside folder `cdm-locales` . The directory would look something like this
+
+`cdm-locales/en/translations.json`
+
+where translations.json is the namespace. Once defined, the vite plugin https://github.com/reboxjs/vite-plugin-i18next-loader will combine all the localization files and will merge them into single file ([virtual modules](https://vitejs.dev/guide/api-plugin#virtual-modules-convention)) during build time, make sure to use the rollup copy plugin so that `cdm-locales` folder is copied as it is to `lib`. The final result can be passed as resources to the i18n
+
+```
+i18n.init({
+  resources,
+  lng: "en"
+});
+
+```
+
+-> Declare plugin in frontend-server `vite.config.js`
+
+```
+import i18nextLoader from '@cdmbase/vite-plugin-i18next-loader'
+
+
+i18nextLoader({folderName: 'cdm-locales',
+    packages: ['@adminide-stack/*-browser','@adminide-stack/*-ant'],
+    namespaceResolution:  'basename',
+}),
+```
+
+-> Add `cdm-locales ` folder inside each package where internationalization is required.
+
+-> Add respective en, es or any other local translations. Make sure to keep the namespace name as translations.json and set it as default namespace. The folder structure would look like this
+`cdm-locales/en/translations.json`
+`cdm-locales/es/translations.json`
+
+-> Add copy plugin inside the respective package rollup config to copy the `cdm-locales` folder to lib
+
+```
+import { copy } from '@web/rollup-plugin-copy'
+copy({ patterns: '**/cdm-locales/**/*', rootDir: './src' })
+
+```
+
+-> Configure i18n configuration in frontend server directory
+
+```
+import resources from 'virtual:i18next-loader'
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+i18n.use(initReactI18next)
+        .init({
+            resources,
+            ns: 'translations',
+            defaultNS: 'translations',
+            lng: "en", 
+            interpolation: {
+                escapeValue: false // react already safes from xss
+            }
+        })
+export default i18n;
+```
+
+-> Use `import { I18nextProvider } from  'react-i18next'` provider and wrap the Main component in it.
+
+  ```
+<I18nextProvider  i18n={i18n}  defaultNS={'translations'}>
+  </I18nextProvider>
+  ```
+
+-> Using hook `useTranslation` we can use the localization in our components
+` const {t} = useTranslation()`
+
+`t('profile.name', {defaultValue:  'Hello world'})`
+
+## Examples
+
+-   Directory
+    ![cdm-locales](/images/cdm-locales-directory.png)
+
+-   Copy Plugin
+    ![vite-plugin-config](/images/copy-plugin.png)
+
+-   I18n Config
+    ![vite-plugin-config](/images/i18n-config.png)
+
+-   Provider
+    ![vite-plugin-config](/images/provider.png)
+
+-   Plugin Config
+    ![vite-plugin-config](/images/vite-plugin-config.png)
+
+## Vite-plugin-i18next-loader
+
+We are using forked version of vite-plugin-i18next-loader https://github.com/reboxjs/vite-plugin-i18next-loader The purpose of this plugin is to combine the localization files across different packages present inside the node_modules, we can pass the glob pattern to packages key that this plugin accepts and it will automatically match all packages inside the node_modules matching that pattern and will look into lib directory of those packages. If it finds the `cdm-locales` or a folder defined by `folderName` key, it will fetch the locales files from that folder and will merge the files of different packages into one and will create a virtual module which holds all the localization data. This can be then served as resources to i18next.
+
+`i18nextLoader({folderName: 'cdm-locales',
+    packages: ['@adminide-stack/*-browser','@adminide-stack/*-ant'],
+    namespaceResolution:  'basename',
+}),`

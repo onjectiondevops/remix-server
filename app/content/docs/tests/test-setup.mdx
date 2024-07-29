@@ -1,0 +1,93 @@
+---
+meta:
+  title: Test Setup
+  description: Test Setup
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Test Setup...
+headers:
+  Cache-Control: no-cache
+---
+
+## Test Setup
+
+## Jest Configuration
+
+There is base jest configuration in the root folder as `jest.config.base.js`. All other packages need to extend this base jest configuration and customize the path so they relative to the package location.
+
+for example in package
+`package/sample-core`
+
+`jest.config.js` file content has
+
+```
+const merge = require('merge')
+const baseConfig = require('../../jest.config.base');
+const mergeData = merge.recursive(
+    baseConfig,
+    {
+        testEnvironment: "jsdom",
+        "transform": {
+            "\\.(js|jsx)?$": "../../transform.js",
+        },
+        moduleNameMapper: {
+            // '^__mocks__/(.*)$': '<rootDir>/../__mocks__/$1',
+            // we'll use commonjs version of lodash for tests 👌
+            // because we don't need to use any kind of tree shaking right?!
+            '^lodash-es$': '<rootDir>../../node_modules/lodash/index.js'
+        },
+        roots: [
+            "src"
+        ],
+    },
+    {
+        globals: {
+
+        }
+    });
+
+module.exports = mergeData;
+```
+
+It extends the base jest configuration and add customize `transform` path relative to the package directory. Set `testEnvironment` to `jsdom` for browser testing and to `node` for node tests.
+
+Check the `package.json` both in the root and packages have path to the environment file. For example
+
+```
+   // from packages
+    "test": "cross-env ENV_FILE=../../../config/test/test.env yarn jest",
+
+```
+
+## Test case
+
+Add following two lines in all test cases where we using `inversify` and `envalid` in the files we testing or somewhere in its dependencies.
+
+```
+import 'reflect-metadata';
+require('dotenv').config({ path: process.env.ENV_FILE });
+```
+
+## Commands
+
+Command to run `test` in all packages
+
+```
+yarn jest
+```
+
+Command to run `test` on a specific packages
+
+```
+lerna exec --scope <package-name> yarn test
+```
+
+Run test on a specific file
+
+```
+lerna exec --scope <package-name> yarn test <file-name.test>
+```
+
+### Known Issues
+
+[Click here for know issues](./known-errors.md)

@@ -1,0 +1,33 @@
+---
+meta:
+  title: Facebook Setup 
+  description: Facebook Setup 
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Facebook Setup ...
+headers:
+  Cache-Control: no-cache
+---
+
+
+
+# Facebook Setup
+
+Inorder to setup facebook login for application. Following steps should be followed.
+1. Login to https://developers.facebook.com
+2. Setup a application by clicking on create new application.
+3. Once setup, Click on Facebook/settings from sidebar.
+4. Set `Embedded Browser OAuth Login` option to true.
+5. Under Valid OAuth Redirect URIs set `https://dev-cdebase.auth0.com/login/callback`
+6. Save the settings.
+7. Copy the client_id and client_secret from Settings/Basic option available in sidebar and setup the integration on auth0 social accounts.
+
+
+# Troubleshoot
+
+```
+[11:26 PM] Redirect uri should be same on frontend and backend  "AUTH0_NATIVE_REDIRECT_URL":"myapp://redirect",
+Check for AUTH0_NATIVE_CLIENT_ID it should be same on backend and frontend
+Check for AUTH0_TOKEN_GRANTED_TIME and DEFAULT_EXTENDED_RENEWAL_TIME
+Check for AUTH0_CUSTOM_DOMAIN needs to be a valid domain also should be same on frontend and backend`
+```

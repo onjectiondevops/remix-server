@@ -1,0 +1,116 @@
+---
+meta:
+  title: Known Errors
+  description: Known Errors
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Known Errors...
+headers:
+  Cache-Control: no-cache
+---
+
+## Known Errors
+
+#### TypeError: Reflect.hasOwnMetadata is not a function
+
+```
+$ jest compatible.test
+ FAIL  src/components/Layout/components/compatible.test.tsx
+  ● Test suite failed to run
+
+    TypeError: Reflect.hasOwnMetadata is not a function
+
+      at ../../node_modules/inversify/src/annotation/injectable.ts:7:17
+```
+
+Solution:
+
+Include `import 'reflect-metadata';` at the top of the test file.
+
+#### ESM files need to be added to transformation
+
+```
+$ jest compatible.test
+ FAIL  src/components/Layout/components/compatible.test.tsx
+  ● Test suite failed to run
+
+    Jest encountered an unexpected token
+
+    This usually means that you are trying to import a file which Jest cannot parse, e.g. it's not plain JavaScript.
+
+    By default, if Jest sees a Babel config, it will use that to transform your files, ignoring "node_modules".
+
+    Here's what you can do:
+     • If you are trying to use ECMAScript Modules, see https://jestjs.io/docs/en/ecmascript-modules for how to enable it.
+     • To have some of your "node_modules" files transformed, you can specify a custom "transformIgnorePatterns" in your config.
+     • If you need a custom transformation specify a "transform" option in your config.
+     • If you simply want to mock your non-JS modules (e.g. binary assets) you can stub them out with the "moduleNameMapper" config option.
+
+    You'll find more details and examples of these config options in the docs:
+    https://jestjs.io/docs/en/configuration.html
+
+    Details:
+
+    /Users/veeramarni/Documents/development/workspace/projects/IDE/admin-layout/node_modules/@adminide-stack/user-auth0-client/lib/index.js:1
+```
+
+Solution:
+
+Jest throws error when `esm` files are used. They need to be added to `transformIgnorePatterns` in `jest.config.js` file.
+
+For example
+
+```
+    transformIgnorePatterns: [
+        '/node_modules/(?!(@vscode-alt/monaco-editor|@files-stack/server-core|@adminide-stack/platform-browser|@adminide-stack/platform-client|abortable-rx|@adminide-stack/user-auth0-client|lodash-es|react-dnd-html5-backend|react-sortable-tree|react-dnd|dnd-core)/).+\\.js$',
+    ],
+```
+
+#### Envalid need the required env variables to be available
+
+```
+$ jest compatible.test
+  ●  process.exit called with "1"
+
+      at defaultReporter (../../node_modules/envalid/src/reporter.ts:67:13
+```
+
+Solution:
+
+Test cases also need to have environment variables available when you using a package that uses `envalid`.
+
+```
+// make sure `processe.env.ENV_FILE` points
+// to `config/test/test.env` and file should exist.
+
+// package.json will have script for
+// `"test": "cross-env ENV_FILE=../../config/test/test.env jest",`
+
+require('dotenv').config({ path: process.env.ENV_FILE });
+```
+
+#### Cannot read property 'child' of undefined on React 17
+
+```
+ TypeError: Cannot read property 'child' of undefined
+
+      25 |
+      26 |
+    > 27 | const wrapper = mount(
+         |                 ^
+      28 |     <Provider store={ store } >
+      29 |         <DeleteEventFab />
+      30 |     </Provider>
+
+      at getFiber (node_modules/enzyme-adapter-react-16/src/detectFiberTags.js:15:35)
+      at detectFiberTags (node_modules/enzyme-adapter-react-16/src/detectFiberTags.js:76:15)
+      at ReactSixteenAdapter.createMountRenderer (node_modules/enzyme-adapter-react-16/src/ReactSixteenAdapter.js:465:19)
+      at ReactSixteenAdapter.createRenderer (node_modules/enzyme-adapter-react-16/src/ReactSixteenAdapter.js:820:51)
+      at new ReactWrapper (node_modules/enzyme/src/ReactWrapper.js:113:32)
+      at mount (node_modules/enzyme/src/mount.js:10:10)
+      at Object.<anonymous> (src/tests/components/DeleteEventFab.test.js:27:17)
+```
+
+Solution:
+
+Enzyme adapter and react needs to be on same version. Inorder to make it work for react-17 we need to utilize this import `import Adapter from '@wojtekmaj/enzyme-adapter-react-17';`

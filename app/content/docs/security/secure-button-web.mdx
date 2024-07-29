@@ -1,0 +1,89 @@
+---
+meta:
+  title: Secure Button Web
+  description: Secure Button Web
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Secure Button Web...
+headers:
+  Cache-Control: no-cache
+---
+
+# Documentation for SecureButton Component (Web Version)
+
+The `SecureButton` component for the web is an extension of the SecureButton component. It is designed for use on web applications and provides additional functionality, including the ability to display a login modal when the user is not authenticated. This component ensures that the action specified in the `onClick` prop is executed only if the user is authenticated. If the user is not authenticated, it can show a login modal for the user to log in.
+
+## Usage
+
+To use the `SecureButton` component for the web, you need to import it and pass a child component (e.g., a button) as an argument. The child component should accept an `onClick` prop, which is a function that defines the action to be executed when the button is clicked.
+
+### Example Usage:
+
+```javascript
+import React from "react";
+import { SecureButton } from "./SecureButton";
+
+function MyButton(props) {
+  // Your button component code
+  return <button onClick={props.onClick}>{props.children}</button>;
+}
+
+const SecureMyButton = SecureButton(MyButton);
+```
+
+In this example, `MyButton` is a custom button component. We wrap it using the `SecureButton` to create a `SecureMyButton`. The `SecureMyButton` will ensure that the action specified in the `onClick` prop is only executed if the user is authenticated. If the user is not authenticated, it can display a login modal for the user to log in.
+
+## Props
+
+The `SecureButton` component for the web accepts the following props:
+
+- `Component`: The child component that you want to wrap with the security layer. This component should accept the `onClick` prop, which is a function that defines the action to be executed when the button is clicked.
+
+## Behavior
+
+When a user interacts with the `SecureButton`, it will perform the following actions based on the user's authentication status:
+
+- If the user is authenticated:
+  - It will execute the action specified in the `onClick` prop.
+- If the user is not authenticated:
+  - It will set `renderProtectedComponent` to `true`, which can trigger the display of a login modal.
+  - It passes control to the `onClick` function with the event object.
+  - The login modal should be displayed conditionally based on the value of `renderProtectedComponent`.
+  - The login modal should provide a way for the user to log in.
+  - The login modal should also have a mechanism to close it, which can be achieved by invoking `onLoginModalClose`.
+
+## Example
+
+```javascript
+import React, { useState, useCallback } from 'react';
+import { LoginModal } from './LoginModal'; // Import your login modal component
+import { isUserAuthenticated } from '@adminide-stack/user-auth0-client';
+
+export function SecureButton<P extends { onClick: (e?: React.MouseEvent<HTMLButtonElement>) => {} }>(
+    Component: React.ComponentType<P>,
+) {
+    return (props: P) => {
+        const [renderProtectedComponent, setRenderProtectedComponent] = useState(false);
+        const { authenticated } = isUserAuthenticated();
+        const handleOnClick = useCallback((e) => {
+            if (authenticated) {
+                return props.onClick(e);
+            }
+            setRenderProtectedComponent(true);
+        }, [authenticated, props, setRenderProtectedComponent]);
+
+        const onLoginModalClose = useCallback(() => {
+            setRenderProtectedComponent(false);
+        }, [setRenderProtectedComponent]);
+
+        return (
+            <>
+                {renderProtectedComponent && <LoginModal onClose={onLoginModalClose} />}
+                <Component {...props} onClick={handleOnClick} />
+            </>
+        );
+    };
+}
+```
+
+In this example, the `SecureButton` component for the web is defined. It wraps a child component specified in the `Component` prop. If the user is not authenticated, it sets `renderProtectedComponent` to `true`, which can trigger the display of a login modal. The login modal can be your custom modal component, and it provides a way for the user to log in. The `onLoginModalClose` function allows closing the login modal when needed.

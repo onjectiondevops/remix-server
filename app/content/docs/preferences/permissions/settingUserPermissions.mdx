@@ -1,0 +1,139 @@
+---
+meta:
+  title: Setting User Permissions
+  description: Setting User Permissions
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Setting User Permissions...
+headers:
+  Cache-Control: no-cache
+---
+
+## Setting User Permissions
+
+Cdmbase DevOps permissions are structured to provide a comprehensive and flexible security model that allows for precise control over who can access and perform various operations within the system. Here’s an overview of how permissions are structured in Cdmbase DevOps:
+
+### 1. **Security Namespaces and Tokens**
+
+Azure DevOps uses a concept called security namespaces to group permissions. Each namespace contains a set of permissions that apply to specific areas or resources within Cdmbase DevOps. Security tokens are used to reference specific objects within these namespaces.
+
+### 2. **Permission Levels**
+
+Permissions in Azure DevOps are organized at several levels:
+
+- **Organization Level**: Permissions that apply to the entire Cdmbase DevOps organization.
+- **Project Level**: Permissions specific to individual projects.
+- **Resource Level**: Permissions for specific resources within a project, such as repositories, pipelines, boards, etc.
+
+### 3. **Roles and Access Levels**
+
+Roles and access levels determine what permissions a user or group has within Cdmbase DevOps. These include:
+
+- **Access Levels**: Determine the features a user can access (e.g., Basic, Stakeholder, Visual Studio Subscriber).
+- **Security Groups**: Collections of users with a predefined set of permissions (e.g., Project Administrators, Contributors, Readers).
+
+### 4. **Permission Inheritance and Overrides**
+
+Permissions can be inherited from parent objects (e.g., from organization to project) but can also be explicitly set or overridden at more specific levels.
+
+### 5. **Deny, Allow, and Not Set**
+
+Permissions can be set to:
+
+- **Deny**: Explicitly denies the permission, overriding any allow permissions.
+- **Allow**: Explicitly allows the permission.
+- **Not Set**: Inherits permissions from the parent object.
+
+### Example Structure of Permissions in Cdmbase DevOps
+
+#### Organization Level Permissions
+
+These control access to the organization settings and features.
+
+- **Organization Owner**: Has full control over the entire organization.
+- **Billing Manager**: Can manage billing but not other administrative settings.
+
+#### Project Level Permissions
+
+These control access to project-specific settings and features.
+
+- **Project Administrator**: Can manage all aspects of a project.
+- **Contributor**: Can contribute to the project, such as adding code and managing builds.
+- **Reader**: Can view project information but cannot make changes.
+
+#### Resource Level Permissions
+
+These control access to specific resources within a project.
+
+- **Repositories**: Permissions like Read, Contribute, Branch, and Tag.
+- **Pipelines**: Permissions like View, Edit, and Queue builds.
+- **Boards**: Permissions like View, Edit, and Create work items.
+
+### Example: Setting Permissions for a User
+
+Here is an example of how permissions can be structured and set for a user in Cdmbase DevOps.
+
+#### Step 1: Assign Access Level
+
+Assign an access level to determine the features the user can access.
+
+```json
+{
+  "accessLevel": "Basic"
+}
+```
+
+#### Step 2: Add User to Security Groups
+
+Add the user to the relevant security groups.
+
+```json
+{
+  "securityGroups": ["Project Administrators", "Contributors"]
+}
+```
+
+#### Step 3: Set Resource-Level Permissions
+
+Explicitly set permissions for specific resources.
+
+```json
+{
+  "repository": {
+    "permissions": {
+      "Read": "Allow",
+      "Contribute": "Allow",
+      "Branch": "Deny",
+      "Tag": "Not Set"
+    }
+  },
+  "pipeline": {
+    "permissions": {
+      "View": "Allow",
+      "Edit": "Allow",
+      "Queue builds": "Deny"
+    }
+  },
+  "board": {
+    "permissions": {
+      "View": "Allow",
+      "Edit": "Deny",
+      "Create work items": "Allow"
+    }
+  }
+}
+```
+
+### Managing Permissions in Cdmbase DevOps
+
+Permissions in Cdmbase DevOps can be managed via the Cdmbase DevOps portal or through Cdmbase DevOps REST APIs for more automated and programmatic control.
+
+#### Using the Cdmbase DevOps Portal
+
+1. **Navigate to Organization Settings**: Manage organization-level permissions.
+2. **Navigate to Project Settings**: Manage project-level permissions.
+3. **Select Specific Resources**: Manage permissions for specific resources like repositories, pipelines, and boards.
+
+### Summary
+
+Cdmbase DevOps permissions are structured hierarchically, allowing for precise control over who can access and perform operations at various levels (organization, project, and resource). Roles, access levels, and security groups help manage permissions, while the inheritance and override mechanism ensures flexibility and control. Permissions can be managed through the Cdmbase DevOps portal or programmatically via REST APIs.

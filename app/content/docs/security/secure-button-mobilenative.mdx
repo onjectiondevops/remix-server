@@ -1,0 +1,90 @@
+---
+meta:
+  title: Secure Button Mobile
+  description: Secure Button Mobile
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Secure Button Mobile...
+headers:
+  Cache-Control: no-cache
+---
+
+# Documentation for SecureButton Component
+
+## Overview
+
+The `SecureButton` component is a higher-order component that wraps another component and adds a security layer to ensure that the action defined in the button is executed only if the user is authenticated. If the user is not authenticated, it navigates them to the login screen.
+
+## Usage
+
+To use the `SecureButton` component, you need to import it and pass a child component (such as a button) as an argument. The child component should accept certain props that are common in most button components.
+
+### Example Usage:
+
+```javascript
+import React from "react";
+import { Button } from "native-base";
+import { SecureButton } from "./SecureButton";
+
+const SecureMyButton = SecureButton(Button);
+
+function MyButton(props) {
+  // Your button component code
+  return (
+    <SecureMyButton onPress={props.onPress}>{props.children}</SecureMyButton>
+  );
+}
+```
+
+In this example, `MyButton` is a custom button component. We wrap it using the `SecureButton` to create a `SecureMyButton`. The `SecureMyButton` will ensure that the action passed to the `onPress` prop is only executed if the user is authenticated.
+
+## Props
+
+The `SecureButton` component accepts the following props:
+
+- `Component`: The child component that you want to wrap with the security layer. This component should accept certain props, including `onPress`, `children`, `borderRadius`, `backgroundColor`, `rightIcon`, and `isDisabled`.
+
+## Behavior
+
+When a user interacts with the `SecureButton`, it will perform the following actions based on the user's authentication status:
+
+- If the user is authenticated:
+  - It will execute the action specified in the `onPress` prop.
+- If the user is not authenticated:
+  - It will navigate the user to the login screen using `navigationRef.navigate`.
+  - It passes the `redirect` parameter as `'back'` to indicate that after successful login, the user should be redirected back to the previous screen.
+
+## Example
+
+```javascript
+import React, { useCallback } from 'react';
+import { navigationRef } from '@common-stack/client-react';
+import { isUserAuthenticated } from '@adminide-stack/user-auth0-client';
+
+export function SecureButton<P extends { onPress; children; borderRadius; backgroundColor; rightIcon; isDisabled }>(
+    Component: React.ComponentType<P>,
+) {
+    return (props: P) => {
+        const { authenticated } = isUserAuthenticated();
+        const handleOnClick = useCallback(() => {
+            if (authenticated) {
+                return props.onPress();
+            } else {
+                navigationRef.navigate('MainStack.Login', {
+                    redirect: 'back',
+                });
+            }
+        }, [authenticated, props]);
+
+        return (
+            <>
+                <Component {...props} onPress={handleOnClick} />
+            </>
+        );
+    };
+}
+```
+
+In this example, the `SecureButton` component is defined, and it wraps a child component specified in the `Component` prop. If the user is authenticated, it allows the action to be executed; otherwise, it navigates the user to the login screen.
+
+Make sure that the child component (`Component`) accepts the required props, including `onPress`, `children`, `borderRadius`, `backgroundColor`, `rightIcon`, and `isDisabled`, to work seamlessly with the `SecureButton`.

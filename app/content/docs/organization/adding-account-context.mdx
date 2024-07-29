@@ -1,0 +1,121 @@
+---
+meta:
+  title: Adding Account Context
+  description: Adding Account Context
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Adding Account Context...
+headers:
+  Cache-Control: no-cache
+---
+
+## Adding Account Context
+
+**Adding @addAccountContext and Understanding IAccountContext and IUserContext**
+
+This help manual provides an overview of the `addAccountContext` directive, which is used to add additional user-specific context details to GraphQL resolvers. The `addAccountContext` directive can be applied to specific queries or mutations to enhance the resolver functionality. 
+Express middleware adds user and organization context based on the provided orgName and token from the frontend.
+
+`IAccountContext` and `IUserContext` interfaces, which are used in the context of the `addAccountContext` directive. These interfaces define the structure of the context objects passed to the resolvers.
+
+**1. IAccountContext is included in the Graphql Rewsolver Context:**
+
+The `IAccountContext` interface represents the context object that provides additional details related to an account. It has the following properties:
+
+- `req`: An instance of `express.Request`, representing the HTTP request object.
+- `res`: An instance of `express.Response`, representing the HTTP response object.
+- `userContext`: An object of type `IUserContext`, containing the user-specific context details.
+- `profile`: An object of type `IUserProfile`, representing the user's profile.
+- `user`: An object of type `IIAuth0Token`, containing information about the user's authentication token.
+- `orgname` (optional): A string representing the organization name associated with the account.
+
+**2. Details of IUserContext:**
+
+The `IUserContext` type defines the user-specific context details within the `IAccountContext`. It has the following properties:
+
+- `accountId` (optional): A string representing the user's account ID.
+- `dummy` (optional): A string field that may be used for dummy data.
+- `emailId` (optional): A string representing the user's email ID.
+- `identity` (optional): An object of type `AnyObject`, which can hold various identity-related data.
+- `namespace` (optional): A string representing the user's namespace.
+- `orgId` (optional): A string representing the organization ID associated with the user.
+- `orgRole` (optional): A string representing the user's role within the organization.
+- `orgSettingUri` (optional): A URI representing the organization's settings.
+- `organization`: An object of type `IOrganization`, providing information about the organization.
+- `paymentCustomerId` (optional): A string representing the payment customer ID associated with the user.
+- `paymentSubscriptionId` (optional): A string representing the payment subscription ID associated with the user.
+- `permissions` (optional): An object of type `AnyObject`, which can hold various permission-related data.
+- `resourceId` (optional): A string representing the resource ID associated with the user.
+- `resourceSettingUri` (optional): A URI representing the resource's settings.
+- `teamId` (optional): A string representing the team ID associated with the user.
+- `teamSettingUri` (optional): A URI representing the team's settings.
+- `userAlias` (optional): A string representing the user's alias.
+- `userSettingUri` (optional): A URI representing the user's settings.
+
+Please note that the `optional` keyword indicates that these properties are not required and may be `null` or `undefined` in certain cases.
+
+By understanding the structure of `IAccountContext` and `IUserContext`, you can effectively utilize the `addAccountContext` directive and access the relevant context data within your resolvers.
+
+Make sure to import the necessary dependencies, such as `express` and the required types/interfaces (`IUserContext`, `IAccountContext`, `IUserProfile`, `IIAuth0Token`, `IOrganization`, etc.), into your codebase to use these interfaces effectively.
+
+If you have any further questions or need additional assistance, please don't hesitate to ask.
+
+
+
+
+Let's dive into the details:
+
+
+
+**1. Adding the `addAccountContext` Directive:**
+
+The `addAccountContext` directive provides additional details, such as the `ServerContext`, in the GraphQL resolver. This directive can be added to specific queries or mutations. Here's an example of how to add the directive:
+
+```graphql
+extend type Query {
+  getOrganizationTeams(orgName: String): [AccountTeam] @addAccountContext
+  ...
+}
+
+extend type Mutation {
+  createInvoice(invoice: InvoiceCreateRequest!): Boolean @addAccountContext
+}
+```
+
+By extending the `Query` and `Mutation` types, you can add the `addAccountContext` directive to specific fields. In the example above, the `getOrganizationTeams` query and the `createInvoice` mutation have been extended with the directive.
+
+**2. Updating Resolvers:**
+
+To handle the functionality added by the `addAccountContext` directive, you need to update your resolvers accordingly. Here's an example of how to update your resolvers:
+
+```javascript
+import { IResolverOptions } from '@common-stack/server-core';
+import { IResolvers } from '<from generated file>';
+
+export const resolvers: (options: IResolverOptions) => IResolvers<IAccountContext & MyContext> = (options) => ({
+  Query: {
+    getOrganizationTeams: (root, { orgName }, { teamService, user, userContext }) => {
+      options.logger.trace('(Query.getOrganizationTeams) orgName [%j]', orgName);
+      if (!user) {
+        return [];
+      }
+      return teamService.getOrganizationTeams(userContext.orgId, userContext.orgRole, userContext.accountId);
+    },
+    ...
+  },
+  Mutation: {
+    createInvoice: async (root, { invoice }, { invoiceService, orgname }) => {
+      return invoiceService.createInvoice({ ...invoice, orgName: orgname })
+        .then(() => true)
+        .catch((e) => e);
+    },
+    ...
+  },
+});
+```
+
+In the updated resolvers, we have added the necessary code to handle the `getOrganizationTeams` query and the `createInvoice` mutation. The `getOrganizationTeams` resolver retrieves organization teams based on the provided `orgName` and user context. The `createInvoice` resolver uses the `invoiceService` to create an invoice with the provided data, including the `orgName` from the resolver context.
+
+Please ensure that you have imported the required dependencies, such as `express` and the necessary types/interfaces (`IResolverOptions`, `IResolvers`, `IContext`, `MyContext`, etc.), as shown in the provided code snippets.
+
+That's it! By following these steps, you can add directives and update your resolvers to enhance the functionality of your GraphQL server.

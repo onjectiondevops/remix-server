@@ -1,0 +1,34 @@
+---
+meta:
+  title: How To Contribute 
+  description: How To Contribute 
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: How To Contribute ...
+headers:
+  Cache-Control: no-cache
+---
+
+## How to contribute ?
+
+Follow the [Coding Guidles](./coding-guidelines) and [Source Code Organisation](./source-code-organization)
+
+You need to be familiar with `lerna` tool and know about various command to run the project. More details about lerna is [here](./lerna-build-tools)
+
+Project setup
+--
+Follow the project setup steps [here](./project-setup)
+
+Branch to use
+--
+
+1. Once you setup the project, switch to `develop` branch. 
+2. Create a new branch using `develop` branch as source based on the issue you working. 
+3. Update changes to that branch and create a PR against `develop` branch. 
+4. As soon as PR is created, we have a build process that runs in the background to check whether it is successful or failed.
+5. If it successfull you will see a green check otherwise a red cross. When you notice it has red cross then run `yarn build` locally and fix any issues and submit the commit again to check it's updated status.
+
+
+
+Note: `master` branch is read-only branch and we don't want to merge anything to it other than that from `develop` branch. So please avoid creating PRs against `master` branch. 
+

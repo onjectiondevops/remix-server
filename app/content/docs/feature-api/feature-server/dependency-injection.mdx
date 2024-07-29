@@ -1,0 +1,85 @@
+---
+meta:
+  title: Dependency Injection
+  description: Dependency Injection
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Dependency Injection...
+headers:
+  Cache-Control: no-cache
+---
+
+# Dependency Injection
+
+## What is DI
+
+As our applications grow and evolves, each one of our code entities will internally require instances of other objects,
+which are better known as dependencies
+in the world of software engineering. The action of passing such `dependencies` to the dependent client is known
+as `injection`, and it also entails the participation
+of another code entity, named the `injector`. The injector will take responsibility for instantiating and bootstrapping
+the required dependencies so they are ready for
+use from the very moment they are successfully injected in the client. This is very important since the client knows
+nothing about how to instantiate its own dependencies
+and is only aware of the interface they implement in order to use them.
+
+In short, `DI` helps you write code in a loosely coupled way and makes your code more testable and reusable.”
+
+### How to register
+
+To achieve `DI` in our Ap, we are using [InversifyJS](https://inversify.io/). This doc will walk you through on how to
+register your entities such
+as classes (services,repositories) and constants with the dependency injection.
+`Feature` server API exposes two ways to register entities with the DI, which are following using
+either `createContainerFunc` and `createHemeraContainerFunc`.
+
+- `createContainerFunc` entities registered via this options will be registered locally inside the gateway
+- `createHemeraContainerFunc`entities registered via this options will be registered as external to gateway and local to
+  micro service.
+
+Both of these options take a function which has inversify `settings` as param and expects and
+Inverisfy `ContainerModule` as return value `(settings) => interfaces.ContainerModule`
+These functions by convention resides inside `container/container.ts` file
+
+### Example
+
+```typescript
+import { ContainerModule, interfaces } from 'inversify';
+
+export const localContainerModule: (settings) => interfaces.ContainerModule = () =>
+    new ContainerModule((bind: interfaces.Bind) => {
+        bind(TYPES.UserRepository).to(UserRepository).inSingletonScope().whenTargetIsDefault();
+        bind('MongodbMigration').to(DefaultUserMigration).whenTargetNamed(DefaultUserMigration.name);
+    });
+
+export const externalContainerModule: (settings) => interfaces.ContainerModule = () =>
+    new ContainerModule((bind: interfaces.Bind) => {
+        bind(TYPES.UserRepository).to(UserRepository).inSingletonScope().whenTargetIsDefault();
+        bind(TYPES.UserService).to(UserService).inSingletonScope().whenTargetIsDefault();
+    });
+
+export default new Feature({
+    //... Other options
+    createContainerFunc: [localContainerModule],
+    createHemeraContainerFunc: [externalContainerModule],
+})
+
+```
+
+Once the entities are registered, those can be easily injected anywhere when needed.
+
+### Usage
+
+```typescript
+
+export class UserService extends BaseService<IUser> {
+    constructor(
+        @inject(TYPES.UserRepository)
+        repository: IUserRepository,
+    ) {
+        super(repository);
+    }
+}
+
+```
+

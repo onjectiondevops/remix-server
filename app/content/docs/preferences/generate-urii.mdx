@@ -1,0 +1,94 @@
+---
+meta:
+  title: Generate URI
+  description: Generate URI
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Generate URI...
+headers:
+  Cache-Control: no-cache
+---
+
+## Generate URI
+
+Use `generateUri` from `@adminide-stack/core`.
+
+params of the URI's query should be `sorted` in order which the above function does it automatically.
+
+### To generate organization URI
+
+Another helpful function, if generating `orgUri`.
+
+```
+const orgUri = generateOrgUri(orgName, IConfigFragmentName.settings);
+
+```
+
+### To generate User URI
+
+In the frontend, we can pass userId as `self` as there are methods to replace with right value.
+
+```
+import {
+  IClientCacheTypeNames,
+  generateResourceUri,
+  IConfigCollectionName,
+  TeamContextFragmentDoc,
+} from '@adminide-stack/core';
+
+const userProxyURI = generateUserUri('self'); // we don't give `params` in the client side.
+```
+
+If you want to generate User resource URI to use in `backend service` from a given user's `alias`.
+
+```
+  const generatedUserUri = generateResourceUri(
+                        IConfigCollectionName.accounts,
+                        {alias: [user.auth0UserId]} as any,
+                        IConfigFragmentName.settings,
+                    )
+```
+
+### To generate Resource URI
+
+```
+import {
+  IClientCacheTypeNames,
+  generateResourceUri,
+  IConfigCollectionName,
+  TeamContextFragmentDoc,
+} from '@adminide-stack/core';
+
+const teamUri = generateResourceUri(
+        IConfigCollectionName.teams,
+        { name: teamName, orgName },
+        IConfigFragmentName.settings,
+      );
+```
+
+## Fragment name to generate Permission/Policy/Settings URI
+
+`IConfigFragmentName` name that is given based on type of URI you want to generate.
+
+For Settings URI: use `IConfigFragmentName.settings`
+For Permission URI: use `IConfigFragmentName.permissions`
+FOr Policy URI: use `IConfigFragmentName.Policy`
+
+## Params in the generateURI
+
+Except for OrgURI, rest of the URIs such as UserUri, TeamURI, ProjectURI, ClientURI need to pass `Collection Name` and `Params to filter the resource id`
+
+### Collection mapping
+
+Here are following collections avaialble based on the resource URI.
+
+```
+enum IConfigCollectionName {
+    accounts = "accounts",
+    organizations = "organizations",
+    workspaces = "workspaces",
+    teams = "teams",
+    projects = "projects",
+    clients = "clients"
+}
+```

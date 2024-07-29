@@ -1,0 +1,71 @@
+---
+meta:
+  title: Lazy Component
+  description: Lazy Component
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Lazy Component...
+headers:
+  Cache-Control: no-cache
+---
+
+## Lazy Component
+
+```
+// SampleComponent
+
+import React, { Suspense } from 'react';
+import { Spinner } from '@chakra-ui/react';
+import { BsPerson } from '@react-icons/all-files/bs/BsPerson';
+import { GiHelp } from '@react-icons/all-files/gi/GiHelp';
+import { lazy } from '@loadable/component';
+
+const GlobalPreferencesLazy = lazy(() => import('./components/global-preferences'));
+const HostingToolsLazy = lazy(() => import('./components/hosting-tools'));
+
+const GlobalPreferences = () => (
+    <Suspense fallback={<Spinner />}>
+        <GlobalPreferencesLazy />
+    </Suspense>
+);
+
+const HostingTools = () => (
+    <Suspense fallback={<Spinner />}>
+        <HostingToolsLazy />
+    </Suspense>
+);
+
+
+export const accountPageStore: IPageStore[] | { [key: string]: any } = [
+        {
+        key: routeKeys.ACCOUNT_GLOBAL_PREFERENCES,
+        path: `${LAYOUT_PATH}${AccountRoutes.GlobalPreferences}`,
+        hideInMenu: true,
+        title: 'Global preferences',
+        icon: ConfigurationIcon,
+        authority: [IPreDefineAccountPermissions.secureUser],
+        description: 'See your default language, currency and timezone',
+        position: IMenuPosition.BOTTOM,
+        component: GlobalPreferences,
+        priority: 6,
+    },
+    
+        {
+        key: routeKeys.ACCOUNT_HOSTING,
+        path: `${LAYOUT_PATH}${AccountRoutes.Hosting}`,
+        hideInMenu: true,
+        title: 'Professional hosting tools',
+        icon: PeopleIcon,
+        authority: [IPreDefineAccountPermissions.secureUser],
+        description: `Get professional tools if you manage several properties on ${config.APP_NAME}`,
+        position: IMenuPosition.BOTTOM,
+        component: HostingTools,
+        priority: 8,
+    },
+    ];
+    
+const filteredRoutes: IRouteData[] = getFilteredRoutes(accountPageStore, selectedRoutes);
+
+export { filteredRoutes };
+```
+

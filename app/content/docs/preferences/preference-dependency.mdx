@@ -1,0 +1,138 @@
+---
+meta:
+  title: Preference Dependency
+  description: Preference Dependency
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Preference Dependency...
+headers:
+  Cache-Control: no-cache
+---
+
+## How to call Preferences from Microservices
+
+Preferences are native to the Graphql Gateway server. Inorder to get preferences, you can call in same methodology used in the browser. Which is by using Apollo Client.
+
+1. First make sure all the preferences are mapped to the graphql schema so they can be called through graphql queries
+
+```
+type Preference_Timer_notifications {
+    approvalNotifications: Boolean
+    submitNotifications: Boolean
+    timeTrackingNotifications: Boolean
+    enableTimetrackerNotifications: Boolean
+}
+
+type Preference_Timer_Activity {
+    autoStop: Int
+    maxTimeInADay: Int
+    waitingTime: Int
+}
+
+type Preference_Timetracker {
+    activity: Preference_Timer_Activity
+    notifications: Preference_Timer_notifications
+}
+
+extend type Preferences {
+    timetracker: Preference_Timetracker
+}
+```
+
+2. Verify from the frontend graphql tools to make sure the `preferences` types have the preference you want to query
+
+![codegen](/images/preferences_graphql_type.png)
+
+3. If you using Moleculer Plugin and within it one of the service has dependency on PreferencesService then use the Mixin to load apolloClient in the Moleculer Plugin. As the `PreferencesService` is depend on `Apollo Client`
+
+```
+import { ApolloClientMixin, getPreferenceSettingsInput } from '@adminide-stack/platform-server';
+
+export class TimesheetMoleculerService extends Service {
+    private timesheetService: ITimesheetService;
+
+    private container: Container;
+
+    constructor(broker: ServiceBroker, { container, ...settings }: { container: Container }) {
+        super(broker);
+        this.container = container;
+
+        const topic = MoleculerTopics.Timesheet;
+
+        this.parseServiceSchema({
+            name: topic,
+            mixins: [ApolloClientMixin],
+            settings: {
+                apolloClient: {
+                    serverUri: config.GRAPHQL_URL,
+                },
+            },
+            events: {
+                ....
+            }
+            this.container.bind(ClientTypes.ApolloClient).toConstantValue(this.apolloClient);
+```
+
+4. Now in the Service to make a call we need to create a fragment of the `preferences` fields you need.
+
+a)
+
+```
+export const TrackerNotificationsPreferencesFragmentDoc = gql`
+    fragment TrackerNotificationsPreferences on Preferences {
+  timetracker {
+    notifications {
+      approvalNotifications
+      enableTimetrackerNotifications
+      submitNotifications
+    }
+  }
+}
+    `;
+```
+
+b)
+
+Make sure the file is included in the codegen.yaml
+
+![codegen](/images/codegen_file_update.png)
+
+c) Run `yarn generateGraphql` to generate types
+
+d) import the `fragment` and call the `preferencesService.viewerSettings`
+
+```
+import { ITrackerNotificationsPreferencesFragment } from '...timetracker-core';
+const timerNotification =  require('../graphql/fragments/timer-notifications.gql');
+
+    const settings = await this.preferencesService.viewerSettings<ITrackerNotificationsPreferencesFragment>(
+        {
+            target: ConfigurationTarget.ORGANIZATION,
+            settingsResource: resourceUri,
+        },
+        {
+            fragmentName: 'TimetrackerPreferences',
+            fragmentDoc: timerNotification.default,
+        },
+    );
+
+```
+
+e. Note, webpack or rollback generator should load the `.gql` file imported as raw text instead of compiled gql.
+
+```
+// in webpack.config.js
+
+    module: {
+        rules: [
+            ...
+            {
+                test: /\.(gql)$/,
+                exclude: /node_modules/,
+                use: 'raw-loader',
+            },
+            ....
+        ],
+    },
+
+```

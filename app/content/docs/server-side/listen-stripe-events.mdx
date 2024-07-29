@@ -1,0 +1,40 @@
+---
+meta:
+  title: Listen Stripe Events
+  description: Listen Stripe Events
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Listen Stripe Events...
+headers:
+  Cache-Control: no-cache
+---
+
+## Use Stripe CLI to simulate Stripe events in your local environment or learn more about Webhooks.
+
+
+### step 1
+[Download the CLI](https://stripe.com/docs/stripe-cli) and log in with your Stripe account
+```
+stripe login
+```
+In the browser make sure you are in the correct tenent of the project. 
+
+note down the webhook token and save it in your env as `STRIPE_ENDPOINT_SECRET`
+
+restart the backend
+
+### step 2
+Forward events to your webhook
+
+```
+stripe listen --forward-to localhost:8080/webhook/stripe
+```
+
+### Trigger events with the CLI
+
+```
+stripe trigger payment_intent.succeeded
+```
+
+[Check source:](https://dashboard.stripe.com/webhooks/create?endpoint_location=local)
+

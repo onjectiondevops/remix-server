@@ -1,0 +1,41 @@
+---
+meta:
+  title: Procedure to deploy
+  description: Procedure to deploy
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Procedure to deploy...
+headers:
+  Cache-Control: no-cache
+---
+
+## Procedure to deploy new version of application
+
+## Below is the procedure to spin up a new development env in new namespace
+
+Lets take an example of `admin-layout` project. Assuming `v1` version is already deployed in `admin-layout-v1` namespace. Now task is to deploy new env with version `v2` in `admin-layout-v2` namespace.
+
+1. Create a new branch and update helm value file with new version number.
+
+- Create a new branch in repo.
+
+  `git checkout admin-layout-v2`
+
+- Change all the values which are specific to environment. Replace all versions with `v2` version. Refer below:
+
+```
+frontend:
+  env:
+    CLIENT_URL: "https://idefront-admin-layout-v2.cdebase.dev"
+env:
+  AUTH0_CUSTOM_CLAIMS_NAMESPACE: "https://idefront-adminide-v2.cdebase.io/"
+```
+
+2. Use below options to deploy new env with Jenkins job.
+
+- Set `version of the deployment` to `v2`
+- Set `the branch of repository` to `admin-layout-v2`  
+  ![Jenkins_Job1](/images/app-deploy-new-version/jenkins1.PNG)
+  ![Jenkins_Job2](/images/app-deploy-new-version/jenkins2.PNG)
+
+Note: The version number should be different. Otherwise it will override the existing setup.

@@ -1,0 +1,118 @@
+---
+meta:
+  title: Service Test Template
+  description: Service Test Template
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Service Test Template...
+headers:
+  Cache-Control: no-cache
+---
+
+## Service Test Template
+
+# Jest template for Backend Services that connects to Mock MongoDB
+
+### Step 1. Jest config file within the package
+
+Provide the related jest configuration and mock mongo configuration.
+
+Here are relative path (`../../../`) is based on the package related to the root.
+
+```
+const base = require('../../../jest.config.base');
+const packageJson = require('./package');
+const merge = require('merge')
+const baseConfig = require('../../../jest.config.base');
+const mongodbConfig = require('../../../jest.config.mongodb');
+
+const mergeData = merge.recursive(
+    baseConfig,
+    {
+        "transform": {
+            "\\.(js|jsx)?$": "../../../transform.js",
+        },
+        moduleNameMapper: {
+            '^__mocks__/(.*)$': '<rootDir>/../../__mocks__/$1',
+            // we'll use commonjs version of lodash for tests 👌
+            // because we don't need to use any kind of tree shaking right?!
+            '^lodash-es$': '<rootDir>/../../../node_modules/lodash/index.js',
+            '@adminide-stack\/core': '<rootDir>/../../adminide-core/src/index.ts',
+        },
+        roots: [
+            "src",
+        ],
+    },
+    mongodbConfig,
+    {
+        globals: {
+
+        }
+    }
+);
+
+module.exports = mergeData;
+```
+
+### Step 2. Make sure you have test.env file under `config/test`
+
+You can copy the existing `dev.env` values in `test.env` unless you want to modify anything based on your testing need.
+
+### Step 3. Create test file like `AccountService.test.ts` within the same folder where you have `AccountService.ts`
+
+```
+import 'reflect-metadata';
+import * as MongoDB from 'mongodb';
+import { connection as mongooseConnection } from 'mongoose';
+import mongoose from 'mongoose';
+import { config } from 'dotenv';
+import { logger } from '@cdm-logger/server';
+import { AccountRepository } from '../../store/repositories/account-repository';
+import { AccountService } from './account-service';
+import * as data from './fixtures/account-fixture.json';
+config({ path: process.env.ENV_FILE });
+
+// needed for all test cases
+async function dropAllCollections() {
+    const collections = Object.keys(mongooseConnection.collections);
+    for (const collectionName of collections) {
+        const collection = mongooseConnection.collections[collectionName];
+        try {
+            await collection.drop();
+        } catch (error) {
+            // Sometimes this error happens, but you can safely ignore it
+            if (error.message === 'ns not found') return;
+            // This error occurs when you use it.todo. You can
+            // safely ignore this error too
+            if (error.message.includes('a background operation is currently running')) return;
+            console.log(error.message);
+        }
+    }
+}
+
+describe('test Create/Update/Delete Account Service', () => {
+    let db: MongoDB.Db;
+    let connection: MongoDB.MongoClient;
+    let accountRepo: AccountRepository;
+    let accountService: AccountService;
+    beforeAll(async () => {
+        const conn = mongoose.createConnection(process.env.MONGO_URL, { dbName: 'jest' });
+        accountRepo = new AccountRepository(conn, logger);
+        accountService = new AccountService(logger, accountRepo);
+    });
+    afterAll(async () => {
+        await dropAllCollections();
+        connection.close();
+    });
+
+    it('service ', async() => {
+        await accountRepo.create(data);
+        const result = await accountRepo.getAll({});
+        ........
+
+    });
+});
+
+```
+
+### Step 4. Now run test using `lerna exec --scope=<package name\> yarn test <test file\>`

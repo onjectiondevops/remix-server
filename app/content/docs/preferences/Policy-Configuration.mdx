@@ -1,0 +1,61 @@
+---
+meta:
+  title: Policy Configuration
+  description: Policy Configuration
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Policy Configuration...
+headers:
+  Cache-Control: no-cache
+---
+
+## Policy Configuration
+
+### Variables to provide when calling
+
+#### On Client end
+
+If the user is logged in we provide the `header` when calling the backend which automatically provides `applicationResoruce` and `organizationResource` (if the user already selected an organization). So they are not need to be provided.
+
+When calling query `query GetConfigurationValue($key: String, $overrides: ConfigurationOverrides_Input )` based on the `target` we need to provide related resource uri.
+
+For `application` specific configuration, variables will be:
+
+```
+resource: {scheme: "mongo-db-file", authority: "", path: "/organization", query: "name=dec-312020-stack", fragment: "settings", …}
+target: 1
+```
+
+Here resource is optional if the user is already logged in the client end.
+
+** note **: User level configuration provide the result of `APPLICATION` scoped configuration overwritten with the default configuration.
+
+For `organization` configuration
+
+```
+resource: {scheme: "mongo-db-file", authority: "", path: "/organizations", query: "name=dec-312020-stack", fragment: "settings", …}
+target: 4
+```
+
+Here resource is optional if the organization is already selected in the client end.
+
+** note **: Organization level configuration provide the result of `WINDOW` scoped configuration overriding the default configuration. If the user is logged in, the user values will be overwritten by organization configuration if they overlaps.
+
+For resource specific
+
+```
+resource: f {scheme: "mongo-db-file", authority: "", path: "/teams", query: "name=TestTeamA&orgName=dec-312020-stack", fragment: "settings", …}
+target: 5
+```
+
+** note **: Resource level configuration provide the result of `RESOURCE` scoped configuration overriding the organization configuration.
+
+#### On Server side
+
+We call `GetViewerPolicies`. Since we don't provide `header` to the http call for the server to determine the `applicationResource` and `organizationResource` they are not optional.
+
+When you need `Application Scoped` configuration, choose `target: 1`. The `applicationResource` to provide would be application resource which can be generated from `generateApplicationUri` method that exist in `@adminide-stack/core`.
+
+When you need `Window scoped` configuration (usually organization specific), choose `target: 4`. The `settingsResource` to provide would be organization resource, which can be generated from `generateOrgUri` method that exist in `@adminide-stack/core`. And provide the `applicationResource` by generating from `generateApplicationUri`.
+
+When you need `Resource scoped` configuration (to overwrite organization configuration with the specific resource configuration), choose `target: 5`. The `settingsResource` to provide would be organization resource, which can be generated from `generategenerateResourceUriOrgUri` method that exist in `@adminide-stack/core`. And provide the `applicationResource` by generating from `generateApplicationUri`.

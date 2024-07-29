@@ -1,0 +1,175 @@
+---
+meta:
+  title: File Uploads
+  description: File Uploads
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: File Uploads...
+headers:
+  Cache-Control: no-cache
+---
+
+## File Uploads
+
+File upload is the basic functionality for any application it is required to upload assets such as user avatar, files and other kind of documents.
+In PubNGo the file upload feature is required for
+
+- User Avatars
+- Government IDs and related legal documents
+- Property images
+
+there are several options available when it comes to decide how an application will upload files, where it will store them for later use and how fast it can retrieve them for
+later use. The retrieval of these files should be quick for better UX and overall application performance.
+
+## AWS S3
+
+For file uploads we are using [AWS S3](https://aws.amazon.com/s3/). Amazon S3 or Amazon Simple Storage Service is a service offered by Amazon Web Services
+that provides object storage through a web service interface.
+
+### Bucket
+
+To upload your data (photos, videos, documents, etc.) to Amazon S3, you must first create an S3 bucket in one of the AWS Regions.
+A bucket is a container for objects stored in Amazon S3. You can store any number of objects in a bucket and can have up to 100 buckets in your account.
+[Read more](https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html)
+
+### Pre signed URL
+
+All objects and buckets by default are private. The presigned URLs are useful if you want your
+user/customer to be able to upload a specific object to your bucket, but you don't require them
+to have AWS security credentials or permissions. [Read more](https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
+
+## Enabling File Uploads
+
+To enable Pubngo to upload files, you should start with writing the supporting
+mutations at the backend, for this documentation we'll follow the example of the Government ID.
+
+### Server Side
+
+In backend, we need to write mutations and respective resolvers for those. See Government ID
+related [mutations](https://github.com/cdebase/pubngo/blob/develop/packages-modules/account-api/server/src/graphql/schema/user-schema.graphql#L76)
+
+In general, you need two type of mutations
+
+1. To generate Signed Upload Link
+2. To attach uploaded image to resource
+
+the names of the mutations can whatever you want but the argument should match
+because all this information is required to fill up the underlying data model.
+
+```graphql
+input UploadedFileInput {
+  name: String!
+  mimeType: String!
+  size: Float!
+  width: Float
+  height: Float
+  url: String!
+}
+extend type Mutation {
+  # generate Signed Upload Link
+  createFileUploadLinks(filenames: [String!]!): [String!]!
+    @isAuthenticated
+    @addAccountContext
+  # To attach uploaded image to resource
+  attachGovernmentID(
+    idType: IDType
+    images: [UploadedFileInput!]!
+  ): GovernmentID @isAuthenticated @addAccountContext
+  uploadVerifyImage(image: UploadedFileInput!): String
+    @isAuthenticated
+    @addAccountContext
+}
+```
+
+```typescript
+        createFileUploadLinks(_, { filenames }, { fileInfoService, userContext }) {
+            return Promise.all(
+                filenames.map((filename) =>
+                    fileInfoService.uploadByUrl({
+                        filename,
+                        // ID of the resource
+                        ref: userContext.accountId,
+                        // Type of resource
+                        refType: IFileRefType.Account as never,
+                        // ID of the user who requested the upload
+                        userId: userContext.accountId,
+                    }),
+                ),
+            );
+        },
+        attachGovernmentID(_, { idType, images }, { extendedAccountService, userContext }) {
+            return extendedAccountService.attachGovernmentID(idType, images, userContext.accountId);
+        },
+        uploadVerifyImage(_, { image }, { extendedAccountService, userContext }) {
+            return extendedAccountService.uploadVerifyImage(image, userContext.accountId);
+        },
+```
+
+### Client Side
+
+From the client side all you need is to call these mutations in sequence and upload the image in between, following the above example
+the sequence will look something like the following
+
+1. Call `createFileUploadLinks` and you will receive an array of Signed URLS
+2. Make an HTTP `put` request on the url with the actual file to upload the file directly to the AWS
+3. Call `attachGovernmentID` and attach uploaded file with the meta information to the actual resource.
+
+to avoid this repetitive effort we've already created a
+React [hook](https://github.com/cdebase/pubngo/blob/develop/packages/pubngo-platform/browser/src/hooks/use-upload-image.ts#L46)
+which takes care of everything. For usage of the hook we can look at the example of
+Government ID [use case](https://github.com/cdebase/pubngo/blob/4cb4555866e66e8d8dfadf48fef9cee43e39b5e0/packages-modules/account-api/browser/src/components/PersonalInfo/AddGovernmentID.tsx#L48).
+
+```typescript
+const { startUpload: attachID, called: governmentIDUploaded } = useUploadImage<
+  never,
+  { idType: IIDType }
+>({
+  createUploadLink: {
+    name: "createFileUploadLinks",
+    mutation: useCreateFileUploadLinksMutation,
+    processVariables: (files) => ({
+      filenames: Array.isArray(files)
+        ? files.map(({ name }) => name)
+        : [files.name],
+    }),
+  },
+  saveUploadedFile: {
+    name: "attachGovernmentID",
+    mutation: useAttachGovernmentIDMutation,
+    processVariables: (images, { idType }) => ({
+      idType,
+      images,
+    }),
+  },
+});
+const { startUpload: uploadFace, called: faceUploaded } = useUploadImage({
+  createUploadLink: {
+    name: "createFileUploadLinks",
+    mutation: useCreateFileUploadLinksMutation,
+    processVariables: (files) => ({
+      filenames: Array.isArray(files)
+        ? files.map(({ name }) => name)
+        : [files.name],
+    }),
+  },
+  saveUploadedFile: {
+    name: "uploadVerifyImage",
+    mutation: useUploadVerifyImageMutation,
+    processVariables: (image) => ({
+      image: Array.isArray(image) ? image[0] : image,
+    }),
+  },
+});
+```
+
+The hook takes two arguments
+
+- createUploadLink
+- saveUploadedFile
+
+both of them have same object structure
+
+- name (Name of the mutation being called)
+- mutation (Apollo Mutation Hook)
+- processVariables
+  - This function will return the exact variables needed by the mutation.

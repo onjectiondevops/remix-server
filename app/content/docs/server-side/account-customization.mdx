@@ -1,0 +1,93 @@
+---
+meta:
+  title: Account Customization
+  description: Account Customization
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Account Customization...
+headers:
+  Cache-Control: no-cache
+---
+
+
+# Backend
+
+Accounts are now customized to add multiple fields. 
+
+1. Accounts module is imported from `adminide-stack/accounts-api-server` the module has basic fields like `email, phone number, etc` and those are added to graphql schema and mongo schema like below. 
+
+
+Mongo Schema
+
+![image](https://user-images.githubusercontent.com/3382355/144945764-d2156f59-3214-41c9-b11b-63cca85d32e8.png)
+
+
+Graphql Schema
+
+![image](https://user-images.githubusercontent.com/3382355/144945790-d55cdd2c-493c-4044-80b2-1d6c54eb79e1.png)
+
+
+2. We can inject the default mongo schema through the module. 
+
+![image](https://user-images.githubusercontent.com/3382355/144945863-493875ff-cab0-4032-b1f0-b09465e13237.png)
+
+![image](https://user-images.githubusercontent.com/3382355/144945891-4076c4b6-cf0e-4b44-9da9-f04bfdb56130.png)
+
+
+3. But if we need to customize accounts to add more fields, we can skip the default module.
+
+a) Add extended fields in mongo scheme like below. 
+
+![image](https://user-images.githubusercontent.com/3382355/144945975-641e1245-e13a-4a7e-ae8d-a127ae56c15f.png)
+
+b) As well graphql extension. Make sure to add the directives `@isAuthenticated @addAccountContext` at the end.
+
+![image](https://user-images.githubusercontent.com/3382355/205443321-4559131a-f249-4990-81f1-018a98ebee72.png)
+
+Generate graphql types by running `yarn generateGraphql` and all the new files generated need to be compiled in those specific packages.
+
+c) Write service 
+
+![image](https://user-images.githubusercontent.com/3382355/205443342-ed4b61de-9ec3-4ced-bde6-87fd85613b5d.png)
+
+
+d) Add necessary types to refer in the Container
+
+![image](https://user-images.githubusercontent.com/3382355/205443415-3c503643-8f04-4ec3-bd8d-f0c4a27d7f0e.png)
+
+e) Bind to the `IAccountMongoExtSchema`  in Container for extending Account's Mongo Schema. Also bind `ExtendedAccountServce` for accessing in the resolvers.
+
+![image](https://user-images.githubusercontent.com/3382355/207566937-cfc8b5d3-54e8-4d5e-bcf3-7e9a6a6a5dec.png)
+
+d) Write the resolver to get the specific field data
+
+![image](https://user-images.githubusercontent.com/3382355/205443631-b2965917-7f33-47a9-96cd-8ee03c5e0155.png)
+
+
+f) Include it in the modules
+
+![image](https://user-images.githubusercontent.com/3382355/205443438-81f5a99a-f91b-467f-b07b-6d9341781dff.png)
+
+# Frontend
+
+On frontend you can write queries how you want. 
+
+For example if you need to get Composite Account data including the basic account field + exntended account fields, you can query in one gql
+
+
+Fragment
+
+![image](https://user-images.githubusercontent.com/3382355/205443555-eb07cfdc-539d-40c9-9d78-1ca10f405509.png)
+
+Query
+
+![image](https://user-images.githubusercontent.com/3382355/205443487-fee8a27b-33a2-45e3-b1ee-73c32783a15d.png)
+
+
+Also you can call individual queries
+
+![image](https://user-images.githubusercontent.com/3382355/205443514-0bac754b-27da-4bf3-9ac4-0e31413e6b36.png)
+
+
+After any changes to `.gql` or `.graphql` make sure to run `yarn generateGraphql` to generate types.
+

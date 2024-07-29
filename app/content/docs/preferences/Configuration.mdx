@@ -1,0 +1,250 @@
+---
+meta:
+  title: Configuration
+  description: Configuration
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Configuration...
+headers:
+  Cache-Control: no-cache
+---
+
+## Configuration
+
+Following Configurations are available and follows the order when they get overwritten.
+
+- Application/User Configuration
+- Organization/Window Configuration
+- Resource Configuration
+
+Step1: When defining a configuration, first it need to be defined in preferences folder of the module.
+
+Example: (Check `account-api/server/src/preferences/teams-contribution.ts`)
+
+```ts
+export const ProjectContribution = {
+  "organization.project.visibility": {
+    type: "string",
+    enum: ["private", "public"],
+    default: "public",
+    enumDescriptions: [
+      nls.localize(
+        "project.team.shareType.public",
+        "Anyone on the internet can view the project."
+      ),
+      nls.localize(
+        "project.team.shareType",
+        "Only people you give access to will be able to view this project"
+      ),
+    ],
+    description: nls.localize("organziationProjectVisibility", "Visibility"),
+    scope: ConfigurationScope.RESOURCE,
+  },
+};
+```
+
+Step 2: It should be loaded into the feature.
+
+As shown in `packages-modules/account-api/server/src/module.ts`
+
+```ts
+export default new Feature({
+    ......
+    createPreference: SettingsContributions as any,
+});
+```
+
+On the frontend, it will get the generated `DefaultConfiguration` from the above preferences contributions under `contents` value.
+
+Query
+
+```gql
+query GetDefaultConfiguration {
+  getConfiguration(input: [{ target: 6, resource: "" }]) {
+    ... on DefaultConfiguration {
+      ...Configuration
+    }
+  }
+}
+
+fragment Configuration on IConfigurationModel {
+  resource
+  target
+  contents
+  keys
+  overrides {
+    contents
+    identifiers
+  }
+}
+```
+
+Result
+
+```
+{
+  "data": {
+    "getConfiguration": [
+      {
+        "resource": {
+          "$mid": 1,
+          "path": "/12/settings.json",
+          "scheme": "cdecode",
+          "authority": "defaultsettings"
+        },
+        "target": null,
+        "contents": {
+          "organization": {
+            "project": {
+              "visibility": "public",
+              "tags": ""
+            },
+          },
+        },
+        "keys": [
+          "organization.project.visibility",
+        ],
+        "overrides": [],
+        "__typename": "DefaultConfiguration"
+      }
+    ]
+  },
+  "loading": false,
+  "networkStatus": 7,
+  "stale": false
+}
+```
+
+As said before this value can be overwritten by one of the configuration in following order.
+
+`UserConfiguration`
+`OrganizationConfiguration`
+`Resource`
+
+If we set a overritten value for above `key` in `OrganizationConfiguration` it gets overwritten by it. To write Organization configruation we call following client side query.
+
+Here we changing the default value of `organization.project.visibility` from `public` to `private`.
+
+Note: `target` is `4`. Check `IConfigurationTarget` enum for explaination.
+
+Query
+
+```
+mutation UpdateConfigurationValue($key: String!, $value: AnyObject!, $overrides: ConfigurationOverrides_Input, $target: Int, $donotNotifyError: Boolean) {
+    updateConfigurationValue(key: $key, value: $value, overrides: $overrides, target: $target, donotNotifyError: $donotNotifyError)
+}
+
+{
+    key: "organization.project.visibility", value: "private", target: 4
+}
+```
+
+And in Mongo DB, `settings` file is written as.
+
+```
+{
+    "_id" : ObjectId("5f480593bc743e662b48c47a"),
+    "tier" : "PERSONAL",
+    "billingLeaders" : [],
+    "name" : "NewOrg",
+    "namespace" : "NewOrg",
+    "resources" : [
+        {
+            "uri" : "mongo-db-file:/teams?name%3Dstackflow-53#settings"
+        }
+    ],
+    "settings" : {
+        "organization" : {
+            "project" : {
+                "visibility" : "private"
+            }
+        }
+    },
+    "orgMembers" : [
+        {
+            "role" : "OWNER",
+            "inactive" : false,
+            "_id" : ObjectId("5f480593bc743e662b48c47b"),
+            "userId" : "google-oauth2|105396711426745196637"
+        }
+    ],
+    "createdAt" : ISODate("2020-08-27T19:12:19.500Z"),
+    "updatedAt" : ISODate("2020-08-27T19:12:19.500Z"),
+    "__v" : 0
+}
+```
+
+Now when you query the settings, it gets overrwritten by `OrganizationConfiguration`
+
+Query
+
+```gql
+query GetConfigurationValue(
+  $key: String
+  $overrides: ConfigurationOverrides_Input
+) {
+  getConfigurationValue(key: $key, overrides: $overrides) @client
+}
+```
+
+Result
+
+```
+{
+  "data": {
+    "getConfigurationValue": "private"
+  },
+  "loading": false,
+  "networkStatus": 7,
+  "stale": false
+}
+```
+
+### Variables to provide when calling
+
+#### On Client end
+
+If the user is logged in we provide the `header` when calling the backend which automatically provides `userResoruce` and `organizationResource` (if the user already selected an organization). So they are not need to be provided.
+
+When calling query `query GetConfigurationValue($key: String, $overrides: ConfigurationOverrides_Input )` based on the `target` we need to provide related resource uri.
+
+For `user` specific configuration, variables will be:
+
+```
+resource: {scheme: "mongo-db-file", authority: "", path: "/accounts", query: "name=dec-312020-stack", fragment: "settings", …}
+target: 1
+```
+
+Here resource is optional if the user is already logged in the client end.
+
+** note **: User level configuration provide the result of `APPLICATION` scoped configuration overwritten with the default configuration.
+
+For `organization` configuration
+
+```
+resource: {scheme: "mongo-db-file", authority: "", path: "/organizations", query: "name=dec-312020-stack", fragment: "settings", …}
+target: 4
+```
+
+Here resource is optional if the organization is already selected in the client end.
+
+** note **: Organization level configuration provide the result of `WINDOW` scoped configuration overriding the default configuration. If the user is logged in, the user values will be overwritten by organization configuration if they overlaps.
+
+For resource specific
+
+```
+resource: f {scheme: "mongo-db-file", authority: "", path: "/teams", query: "name=TestTeamA&orgName=dec-312020-stack", fragment: "settings", …}
+target: 5
+```
+
+** note **: Resource level configuration provide the result of `RESOURCE` scoped configuration overriding the organization configuration.
+
+#### On Server side
+
+We call `GetViewerSettings`. Since we don't provide `header` to the http call for the server to determine the `userResource` and `organizationResource` they are not optional.
+
+When you need `Application Scoped` configuration, choose `target: 1`. The `userResource` to provide would be user resource which can be generated from `generateUserUri` method that exist in `@adminide-stack/core`.
+
+When you need `Window scoped` configuration (usually organization specific), choose `target: 4`. The `settingsResource` to provide would be organization resource, which can be generated from `generateOrgUri` method that exist in `@adminide-stack/core`. If you also need user specific
+
+When you need `Resource scoped` configuration (to overwrite organization configuration with the specific resource configuration), choose `target: 5`. The `settingsResource` to provide would be organization resource, which can be generated from `generategenerateResourceUriOrgUri` method that exist in `@adminide-stack/core`.

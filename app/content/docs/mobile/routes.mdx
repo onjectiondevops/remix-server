@@ -1,0 +1,83 @@
+---
+meta:
+  title: Routes
+  description: Routes
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Routes...
+headers:
+  Cache-Control: no-cache
+---
+
+## routes
+
+# With Orgname and Sider with Main Tab
+
+```
+/ - MainNavigator
+    /:orgName(screen)
+    /:orgName/MainDrawer
+        /Sider1
+        /Sider2
+        /BottomTab
+            /Tab1
+            /Tab2
+    /login
+    /password-reset
+```
+
+Generated Component from above routes.
+
+```
+<Stack name=“MainStack”>
+    <Stack.Screen name='orgSelection'/>
+    <Drawer.Navigator initialRouteName="Drawer">
+        <Drawer.Screen name="Sider1" component={Sider1} />
+        <Drawer.Screen name="Sider2" component={Sider2} />
+        <Tab.Navigator>
+        I   <Tab.Screen name="Tab1" component={Tab1} />
+            <Tab.Screen name="Tab2" component={Tab2} />
+      </Tab.Navigator>
+    </Drawer.Navigator>
+    <Stack.Screen name='login' />
+    <Stack.Screen name='password-reset' />
+</Stack>
+```
+
+# With Orgname and Sider only
+
+```
+/ - Main Navigator(StackNavigator)
+    /:orgName(screen)             -[//:orgName, exact: true] -> org selection page will open and orgname is selected, which will redirect to home
+    /:orgName/MainDrawer         -[//:orgName/l/] MainStack.Drawer
+        /account        -[//:orgName/l/account]   MainStack.Drawer.Account
+        /home           -[//:orgName/l/home]      MainStack.Drawer.Home
+    /login
+    /password-reset
+```
+
+Generated Component from above routes.
+
+```
+<Stack name=“MainStack”>
+    <Stack.Screen name='orgSelection'/>
+    <Drawer.Navigator initialRouteName="Drawer">
+        <Drawer.Screen name="Home" component={HomeScreen} />
+        <Drawer.Screen name="Account" component={AccountScreen} />
+    </Drawer.Navigator>
+    <Stack.Screen name='login' />
+    <Stack.Screen name='password-reset' />
+</Stack>
+```
+
+# Without orgName
+
+```
+/ - MainNavigator
+    /                   -[//]          -> this screen checks if user logged in, if logged it redirect to home screen
+    /MainDrawer         -[//l]
+        /BottomTab      -[//l]
+        /account        -[//l/account]
+    /login
+    /password-reset
+```

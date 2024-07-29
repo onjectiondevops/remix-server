@@ -1,0 +1,76 @@
+---
+meta:
+  title: Mongo Model
+  description: Mongo Model
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Mongo Model...
+headers:
+  Cache-Control: no-cache
+---
+
+# Mongo Model
+
+## Overview
+
+We are following the `ODM` object data modeling pattern, which dictate that for each document in the mongo db, we'll
+have a `Model` in our codebase which will contain the definition regarding how our database document will look like, what fields it'll have and how to
+validate them like `unique` , `required` validations. We are using [Mongoose](https://mongoosejs.com/) to define these models
+and to communicate with the MongoDB.
+
+## Mongoose
+
+In order to communicate with the database we are using [Mongoose](https://mongoosejs.com/). An object data modeling (
+ODM) library
+specifically designed for NodeJS to work with the [MongoDB](https://www.mongodb.com/). What this means in practical
+terms is that you can define your data model in
+just one place, in your code. It allows defining schemas for our data to fit into, while also abstracting the access
+to MongoDB. This way we can ensure all saved documents share a structure and contain required properties.
+
+### Schema
+
+While Mongo is schema-less, SQL defines a schema via the table definition. A
+Mongoose [Schema](https://mongoosejs.com/docs/guide.html) is a document data structure
+(or shape of the document) that is enforced via the application layer.
+
+### Models
+
+[Models](https://mongoosejs.com/docs/models.html) are fancy constructors compiled from Schema definitions. An instance of a model is called a [document](https://mongoosejs.com/docs/documents.html).
+Models are responsible for creating and reading documents from the underlying MongoDB database.
+
+### Defining Model
+
+```typescript
+import { Connection, Document, Model, Schema } from "mongoose";
+import {
+  addIdVirtualFields,
+  commonModeSchemaOptions,
+} from "@common-stack/store-mongo"; // Common Utility funtion, for common opeations
+import { IUser } from "generated-modals"; // Typescript definiton for the Model
+
+export type IUserMongoModel = Document & IUser;
+export type UserModelType = Model<IUserMongoModel>;
+
+// First Step is to Define Schmea
+export const userScehma = new Schema<IUserMongoModel>(
+  {
+    firstName: { type: Schema.Types.String },
+    lastName: { type: Schema.Types.String },
+    email: { type: Schema.Types.String, required: true, unique: true },
+    active: { type: Schema.Types.Boolean, default: false },
+    // For collection you just need to pass the field definiton inside brackets []
+    comments: [{ type: Schema.Types.ObjectId, ref: "commments" }], // Just to explain, how we can have cross document ref
+  },
+  commonModeSchemaOptions // Adds timestamos (createdAt, updatedAt)
+);
+
+// Once schema is defined we can add/override methods on the schmea object
+addIdVirtualFields(userScehma); // Add `id` field which will contain document objectId, instead of `_id`
+
+// By calling `.model` on active db connection we instantiate a `model` instance (document).
+// Firs param is the name of the `collection`, which should always be plural whereas the second one is the schema definition of that model
+export const UserModelFunc: (db: Connection) => UserModelType = (db) =>
+  db.model<IUserMongoModel>("users", userScehma);
+```
+
+The next step is to [Define Repository](repositories) for this model.

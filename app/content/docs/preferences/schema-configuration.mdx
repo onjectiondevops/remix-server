@@ -1,0 +1,71 @@
+---
+meta:
+  title: Schema Configuration
+  description: Schema Configuration
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Schema Configuration...
+headers:
+  Cache-Control: no-cache
+---
+
+# Conditional Field Rendering - Schema Documentation
+
+This documentation explains how to extend a schema to conditionally render a new field based on a specific condition. This example focuses on a generic schema and uses a placeholder `$newFieldCondition` for the condition.
+
+## Introduction
+
+You may need to conditionally display or hide a field in your data schema based on certain criteria. This document outlines the steps to add a new field to a generic schema and specify conditions for when it should be rendered.
+
+## Updating the Schema
+
+### Step 1: Update the Schema Object
+
+Modify the schema object to include the new field (`newField`) at the appropriate location within the existing structure.
+
+```javascript
+export const genericSchema = {
+  def: {},
+  schema: {
+    type: "object",
+    properties: {
+      existingField1: { type: "string" },
+      existingField2: { type: "number" },
+      // ... (other existing fields)
+      newField: { type: "string" }, // New field
+    },
+    if: {
+      properties: {
+        $newFieldCondition: { const: true }, // Placeholder for the condition
+      },
+    },
+    then: {
+      properties: {
+        $conditionalField: { type: "string" }, // Define the new field in 'then' when the condition is met
+      },
+    },
+  },
+};
+```
+
+### Step 2: Define the Condition
+
+Define the condition within the `if` section. Replace the `$newFieldCondition` placeholder with the actual property and condition that should trigger the visibility of `newField`. For example:
+
+```javascript
+if: {
+   properties: {
+       someProperty: { const: "" }, // Example condition: newField shown when someProperty is greater than 10
+   },
+}
+```
+
+The `then` section specifies what properties to add when the condition is met.
+
+## How the UI Looks
+
+In the user interface, the appearance of the `newField` element depends on whether the specified condition is met. Here's how the UI behaves:
+
+- **Condition Met**: When the condition, as defined in the schema (e.g., `someProperty` > 10), is satisfied, the `newField` will be rendered and displayed within the user interface. Users can interact with this field as they would with any other field.
+
+- **Condition Not Met**: If the condition is not met, the `newField` will not be displayed in the UI. It will be hidden, and users will not see or interact with it. This behavior ensures that the UI remains user-friendly and responsive to the defined conditions.

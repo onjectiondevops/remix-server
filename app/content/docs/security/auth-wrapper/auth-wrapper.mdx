@@ -1,0 +1,24 @@
+---
+meta:
+  title: Auth Wrapper
+  description: Auth Wrapper
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Auth Wrapper...
+headers:
+  Cache-Control: no-cache
+---
+
+## Auth Wrapper
+
+Authwrapper is a configuration provided to the Feature, it takes a component AuthWrapper or AuthWrapperHoc in mobile. The purpose of this wrapper is to validate whether the user is authenticated to access the component else it will get redirected to login.
+
+![Configuration](/images/configuration.png)
+
+If you want that particular route should only be accessible to logged in user you can simply pass `auth: true` while configuring the route as shown below
+
+![Route Config](/images/route-config.png)
+
+For mobile, authWrapper works in the similar fashion but the route config can have another property which will be UnAuthenticatedComponent which when provided will be rendered incase the user is unauthenticated and trying to access the route.
+
+![Unauthenticated Component](/images/unauthenticated.png)

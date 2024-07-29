@@ -1,0 +1,50 @@
+---
+meta:
+  title: Assets
+  description: Assets
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Assets...
+headers:
+  Cache-Control: no-cache
+---
+
+## Importing Assets
+
+CDEBase is a webpack-based project, so it follows the general approach to importing assets &mdash;
+[webpack dependency management]. You can look up the module `packages/assets` to see how assets are imported.
+
+As you can see in the code sample below, the project imports all the assets from the `modules/favicon/common/assets`
+folder:
+
+```js
+const exportedAssets = {};
+let isbrowser = typeof window !== "undefined";
+if (isbrowser) {
+  // Favicon.ico should not be hashed, since browsers expect it to be exactly on /favicon.ico URL
+  require("!file-loader?name=[name].[ext]!/images/favicon.ico"); // eslint-disable-line
+
+  // Require all files from assets dir recursively adding them into assets.json
+  const req = require.context(
+    "!file-loader?name=[hash].[ext]!./assets",
+    true,
+    /.*/
+  );
+  req.keys().map((key) => {
+    exportedAssets[`${key.replace("./", "")}`] = req(key);
+  });
+}
+
+export default exportedAssets;
+```
+
+To use new assets in your client side react code, import from the favicon package as follows:
+
+```js
+import assets from "@admin-layout/assets";
+console.log("--ASSETS", assets);
+
+export const Favicon = <img src={assets["favicon.ico"]} />;
+```
+
+![assets image](https://user-images.githubusercontent.com/3382355/232731184-a5c3b622-48f0-41ac-a96c-678339d71558.png)

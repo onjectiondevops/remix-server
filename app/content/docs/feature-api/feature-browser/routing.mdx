@@ -1,0 +1,341 @@
+---
+meta:
+  title: Routing
+  description: Routing
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Routing...
+headers:
+  Cache-Control: no-cache
+---
+
+## Routing
+
+In Feature, application are single-page applications, and the page address jumps are done on the browser side, and the server will not be re-requested to html, and html is only loaded once when the application is initialized. All pages are compossed of different components. The switching of pages is actually the switching of different components. You only need to associate different routing paths with corresponding components in the confiugration.
+
+## Configuring Routing
+
+Configure through `routeConfig` in the configuration file, the format is an array of routing information.
+
+Example:
+
+```js
+const genRoutes = [
+  {
+    ["/ghost"]: { component: Component },
+    ["/pepper"]: { component: Component, exact: false },
+    ["/pepper/ginger"]: { component: Component, exact: true },
+    ["/pepper/:type"]: { component: Component, exact: false },
+    ["/pepper/:type/scoville"]: { component: Component, exact: false },
+  },
+];
+
+const connector = new Feature({ routeConfig: genRoutes });
+```
+
+### path
+
+- Type: `string`
+
+`path` Only two placeholder configurations are supported, the first is `:` in the, and the second is in the form of `*` wildcards, which can only appear at the end of the routing string.
+
+### component
+
+- Type: `string`
+
+Configure the React component.
+
+### sub routes
+
+Configure sub-routes by based on the path. In order to have a sub route the parent path should have `exact: false`.
+
+Example:
+
+If you need a subroute to `/ginger` under `pepper`, the parent route `/pepper` should have `exact: false` and the sub-route should be prepend with parent path like `/peper/ginger`
+
+```js
+    const genRoutes = [
+        {
+            ['/pepper']: { component: Component, exact: false },
+            ['/pepper/ginger']: { component: Component, exact: true },
+    ];
+
+```
+
+This will result into
+
+```js
+const connectorRoutes = connector.getConfiguredRoutes();
+/** connectorRoutes = [
+                    {
+                path: '/pepper',
+                component: Component,
+                exact: false,
+                routes: [
+                    {
+                        path: '/pepper/ginger',
+                        component: Component,
+                        exact: true,
+                    },
+                ],
+            },
+    ]
+    **/
+```
+
+### redirect
+
+- Type `string`
+  Configure routing jumps.
+
+for example:
+
+```
+    const genRoutes = [
+        {
+            ['/']: { redirect: '/list' },
+            ['/list']: { component: Component, exact: true },
+    ];
+
+    const connector = new Feature({ routeConfig: genRoutes });
+```
+
+### wrappers
+
+- Type `string[]`
+  wrappers is HOC.
+
+For example, you can run validation check for a specific route.
+
+```js
+    const genRoutes = [
+        {
+            ['/user']: {
+              component: 'user',
+              wrappers: [ (props) => validationComp ]
+               },
+            ['/list']: { component: Component, exact: true },
+    ];
+
+```
+
+### title
+
+- Type: `string`
+  Configure the title of the route.
+
+## Route component parameters
+
+Feature uses `react-router@5` as a routing component. You can use all the routing hooks supported by `react-router@5`.
+
+Since `routeConfig` is a wrapper of `react-router@5`, it supprots all [Route Config](https://v5.reactrouter.com/web/example/route-config)
+
+Read react-router docs
+
+- [exact](https://v5.reactrouter.com/web/api/Route/exact-bool)
+- [strict](https://v5.reactrouter.com/web/api/Route/strict-bool)
+- [location](https://v5.reactrouter.com/web/api/Route/location-object)
+- [query params](https://v5.reactrouter.com/web/example/query-parameters)
+
+As well all of react-router@5 APIs are supproted.
+
+### Routing Dynamic Parameters
+
+```js
+const genRoutes = [
+  {
+    ["/pepper"]: { component: Component, exact: false },
+    ["/pepper/:type"]: { component: Component, exact: false },
+    ["/pepper/:type/scoville"]: { component: ScovilleComponent, exact: true },
+  },
+];
+
+const connector = new Feature({ routeConfig: genRoutes });
+```
+
+Component
+
+```js
+import { useParams } from 'react-router';
+
+const ScovilleComponent = () => {
+    const params = useParams();
+}
+/**
+ for route `/pepper/lime/scoville`
+ //params
+ {
+   "type": "lime"
+ }
+
+```
+
+### generatePath
+
+Sometimes in a component we need to redirect. The generatePath function can be used to generate URLs to the routes.
+
+```js
+import { generatePath, useHistory } from "react-router";
+
+const ROUTES = {
+  dashboard: "/o/:orgName/dashboard",
+};
+
+const onOrgSelection = (orgName: string) => {
+  const route = generatePath(ROUTES.dashboard, { orgName: "test" });
+  // Will return `/o/test/dashboard`
+  history.push(route);
+};
+```
+
+## A realistic app may have Routes configured as below.
+
+Example:
+
+```js
+const orgRoutes = {
+  ["/"]: { exact: true, component: MyComponent },
+  ["/login"]: { exact: true, component: MyComponent },
+  ["/callback"]: { exact: true, component: MyComponent },
+  ["/:orgName/usermenu/logout"]: { exact: true, component: MyComponent },
+  ["/:orgName/usermenu/profile"]: { exact: true, component: MyComponent },
+  ["/reset-password"]: { exact: true, component: MyComponent },
+  ["/:orgName/usermenu/account/"]: { exact: false, component: MyComponent },
+  ["/:orgName/usermenu/account"]: { exact: false, component: MyComponent },
+  ["/:orgName/usermenu/account-settings"]: {
+    exact: true,
+    component: MyComponent,
+  },
+  ["/:orgName/teams/view/:teamName"]: { exact: false, component: MyComponent },
+  ["/:orgName/teams"]: { exact: true, component: MyComponent },
+  ["/:orgName/invitation"]: { exact: true, component: MyComponent },
+  ["/:orgName/members"]: { exact: false, component: MyComponent },
+  ["/:orgName/dashboard"]: { exact: true, component: MyComponent },
+  ["/:orgName/registries"]: { exact: true, component: MyComponent },
+  ["/:orgName"]: { exact: false, component: MyComponent },
+};
+```
+
+Under the hood it will generates to below `Object` before passing it to the `react-router-config` function.
+
+```js
+const reactRouterConfig = [
+  {
+    _pathPrefix: "",
+    component: [Function],
+    exact: true,
+    path: "/authenticate-popup",
+    position: "MIDDLE",
+  },
+  {
+    _pathPrefix: "",
+    component: [Function],
+    exact: true,
+    path: "/callback",
+    position: "MIDDLE",
+  },
+  {
+    _pathPrefix: "",
+    component: [Function],
+    exact: true,
+    path: "/reset-password",
+    position: "MIDDLE",
+  },
+  {
+    _pathPrefix: "",
+    component: [Function],
+    exact: false,
+    name: "rootSlash",
+    path: "/",
+    position: "MIDDLE",
+    routes: [
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: false,
+        path: "/",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/dashboard",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/invitation",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: false,
+        path: "/:orgName/members",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/registries",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/teams",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: false,
+        path: "/:orgName/teams/view/:teamName",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: false,
+        path: "/:orgName/usermenu/account",
+        position: "MIDDLE",
+        routes: [
+          {
+            _pathPrefix: "/",
+            component: [Function],
+            exact: false,
+            path: "/:orgName/usermenu/account/",
+            position: "MIDDLE",
+          },
+        ],
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/usermenu/account-settings",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/usermenu/logout",
+        position: "MIDDLE",
+      },
+      {
+        _pathPrefix: "/",
+        component: [Function],
+        exact: true,
+        path: "/:orgName/usermenu/profile",
+        position: "MIDDLE",
+      },
+    ],
+  },
+];
+```

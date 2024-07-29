@@ -1,0 +1,124 @@
+---
+meta:
+  title: Avoid using promises in UI
+  description: Avoid using promises in UI
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Avoid using promises in UI...
+headers:
+  Cache-Control: no-cache
+---
+
+## Avoid using promises in UI
+
+Do not use promises in the UI. If you using apollo-client, we can use an in-built `upgrade` to perform necessary action.
+
+Wrong-Way
+---
+```
+import * as React from 'react';
+import {
+    IOrganizationListSlotProps,
+} from '@adminide-stack/react-shared-components';
+import {     useGetUserOrganizationsListLazyQuery,
+ } from '@adminide-stack/account-api-client';
+import { useChangeOrganizationMutation } from '@adminide-stack/platform-browser/lib/components';
+import {IOrganization} from '@adminide-stack/core';
+
+const {useLayoutEffect} = React;
+
+export interface IOrganizationListProps extends IOrganizationListSlotProps {
+    active: boolean;
+}
+
+export const OrganizationsList = (props: IOrganizationListProps): React.ReactElement => {
+    const [fetchOrganizations, {data, loading}] = useGetUserOrganizationsListLazyQuery({
+        fetchPolicy:'cache-and-network',
+    });
+    const [changeOrganization] = useChangeOrganizationMutation();
+    const changeOrg = async (orgId: string) => {
+        await changeOrganization({
+            variables: {
+                orgId,
+            },
+        });
+    };
+    const {active, render} = props;
+
+    useLayoutEffect(() => {
+        if (active) {
+            fetchOrganizations();
+        }
+    }, [active]);
+
+    return render({organizations: data?.getUserOrganizations as IOrganization[], changeOrg, loading});
+};
+
+OrganizationsList.defaultProps = {
+    active: false,
+};
+```
+
+
+
+Right Way
+---
+
+```
+import * as React from 'react';
+import {
+    IOrganizationListSlotProps,
+} from '@adminide-stack/react-shared-components';
+import {
+    useGetUserOrganizationsListLazyQuery,
+} from '@adminide-stack/account-api-client';
+import { useChangeOrganizationMutation } from '@adminide-stack/platform-browser/lib/ant-module';
+import { IOrganization } from '@adminide-stack/core';
+
+const { useLayoutEffect } = React;
+
+export interface IOrganizationListProps extends IOrganizationListSlotProps {
+    active: boolean;
+}
+
+export const OrganizationsList = (props: IOrganizationListProps): React.ReactElement => {
+    const [fetchOrganizations, { data, loading }] = useGetUserOrganizationsListLazyQuery();
+    const [changeOrganization] = useChangeOrganizationMutation();
+    const changeOrg = (orgName: string) => {
+        changeOrganization({
+            variables: {
+                orgName: orgName,
+            },
+            update: (cache, { data, errors }) => {
+                if (data) {
+                    cache.modify({
+                        fields: {
+                            getUserOrganizations() {}
+                        }
+                    })
+                }
+            }
+        });
+    };
+    const { active, render } = props;
+
+    useLayoutEffect(() => {
+        if (active) {
+            fetchOrganizations();
+        }
+    }, [active]);
+
+    return render({ organizations: data?.getUserOrganizations as IOrganization[], changeOrg, loading });
+};
+
+OrganizationsList.defaultProps = {
+    active: false,
+};
+```
+
+
+
+
+
+Incase if have nonapollo client that requires promises then use packages like `react-hook`.
+

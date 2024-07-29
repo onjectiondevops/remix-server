@@ -1,0 +1,22 @@
+---
+meta:
+  title: Org Mobile Navigation
+  description: Org Mobile Navigation
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Org Mobile Navigation...
+headers:
+  Cache-Control: no-cache
+---
+
+## Org Mobile Navigation
+
+While defining react naigation route config, if any of the route contains route param then all the child routes should pass the param while navigating to the route. Consider the following example
+
+![mobile navigation](https://user-images.githubusercontent.com/30002668/204160460-c72a89b2-40b7-468f-90d4-d13b2afb648e.png)
+
+The stack screen will be defined like this
+
+![stack screen](https://user-images.githubusercontent.com/30002668/204160487-c28d4468-6aa7-4427-a491-e9faf0cfc723.png)
+
+Now whenever you need to navigate to Dashboard, you will have to pass the `orgName` prop like this `navgation.navigate('MainStack.OrgStack.OrgNameStack', {screen: 'Dashboard', params: {orgName: 'asd'}})`

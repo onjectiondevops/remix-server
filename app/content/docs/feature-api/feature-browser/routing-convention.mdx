@@ -1,0 +1,129 @@
+---
+meta:
+  title: Routing Convention
+  description: Routing Convention
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Routing Convention...
+headers:
+  Cache-Control: no-cache
+---
+
+## Component layout
+
+`compute.tsx` is used for saving all the routes related configuration. And it is get imported in `module.tsx`.
+
+
+```
+├── src
+│   ├── assets
+│   │   └── images
+│   │       ├── bank_account_helper.png
+│   │       ├── paypal_logo.png
+│   │       └── stripe_logo.png
+│   ├── contianers
+│   │   ├── Billing
+│   │   │   ├── Billing.tsx
+│   ├── compute.tsx
+│   ├── constants
+│   ├── index.tsx
+│   ├── module.tsx
+
+```
+
+compute.tsx
+
+```js
+export const basePath = '/o/:orgName/usermenu';
+export const modulePath = `${basePath}/billing`;
+const billingPageStore = [
+    // this would define the parent menu position of the billing menus
+    {
+        key: 'user-menu',
+        name: 'User Menu',
+        tab: 'User Menu',
+        path: basePath,
+        position: IMenuPosition.BOTTOM,
+        exact: false,
+    },
+    // this would define the submenu's parent of Billing
+    {
+        key: 'billing',
+        name: 'Billing',
+        tab: 'Billing',
+        path: modulePath,
+        auth: true,
+        exact: false,
+        authority: [IPreDefineBillingPermissions.viewSubscriptions],
+        component: React.lazy(() => import('./components/billing-tab')),
+    },
+        {
+        name: 'Home',
+        key: 'home',
+        tab: 'Home',
+        auth: true,
+        path: `${modulePath}/home`,
+        component: Home,
+        authority: [IPreDefineBillingPermissions.viewSubscriptions],
+    },
+]
+
+// add the `key` that you want to use in `routeConfig`
+const selectedRoutes = ['billing', 'home', 'user-menu'];
+const filteredBillingRoutes: IMappedData[] = getFilteredRoutes(billingPageStore, selectedRoutes);
+
+export const filteredRoutes: IMappedData[] = [
+    ...filteredBillingRoutes,
+];
+```
+
+
+module.tsx
+
+```js
+import { Feature } from '@common-stack/client-react';
+import { filteredRoutes } from './compute';
+
+export const repository = new Feature({
+  routeConfig: filteredRoutes,
+  ...
+});
+
+```
+### Routing Security
+
+If the routes need a login user, set `auth: true`.
+
+
+example
+```js
+    {
+        name: 'Home',
+        key: 'home',
+        tab: 'Home',
+        auth: true,
+        ...
+    },
+```
+
+Under the hood it uses `authWrapper` set in the `Feature.authWrapper`.
+
+
+### Routing permissions
+
+If permssions are configured in the backend, you can restrict the URL based on the permission by setting `authority`. 
+
+example
+
+```js
+
+    {
+        key: 'billing',
+        name: 'Billing',
+        ...
+        authority: [IPreDefineBillingPermissions.viewSubscriptions],
+        component: React.lazy(() => import('./components/billing-tab')),
+    },
+
+```
+

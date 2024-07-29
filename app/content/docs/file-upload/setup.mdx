@@ -1,0 +1,435 @@
+---
+meta:
+  title: Setup
+  description: Setup
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Setup...
+headers:
+  Cache-Control: no-cache
+---
+
+## Setup
+
+1. Add env variables to `config/development/dev.env`. Ask your admin for details.
+
+```
+# AWS S3
+AWS_S3_ACCESS_KEY_ID=
+AWS_S3_BUCKET=
+AWS_S3_REGION=ca-central-1
+AWS_S3_SECRET_ACCESS_KEY=
+AWS_S3_SIGNATURE_VERSION=v4
+# Image Processing Credentials
+IMAGE_PROCESSING_SERVICE=
+PROPERTY_IMAGE_WIDTH=800
+PROPERTY_IMAGE_WIDTH=800
+```
+
+2. (backend) Add File Info Server package to backend package.json
+   ![add-package-backend](/images/add-package-backend.png)
+3. (backend) Update the module to include the `FileInfoModule` in the `External Modules`
+   ![add-to-backend-module](/images/add-to-backend-module.png)
+4. Disable ApolloServer native upload by setting to false.
+   ![modify-upload-false-server](/images/modify-upload-false-server.png)
+5. (frontend) Add or Make sure `apollo-upload-client` package with version `@16.0.0` is in the forntend's package.json.
+   ![add-upload-client-frontend](/images/add-upload-client-frontend.png)
+6. (frontend) Modify the `base-apollo-client.ts` file to make upload link as termination link as followed.
+   ![add-link-frontend](/images/add-link-frontend.png)
+7. Run `yarn` to install the added packages.
+
+The above code adds `Upload` resolver and Schema Scalar that you use in the Graphql Schema
+
+## Backend Coding
+
+1. Add required Mutation and Query in the `server` package.
+
+```
+type Profile {
+    id: ID!
+    user: UserAccount!
+    photos: [FileInfo!]  <--- To get File Links
+    about: String
+    location: String
+    work: String
+    languages: [Language!]
+    createdAt: String!
+    updatedAt: String!
+}
+input ProfileInput {
+    about: String
+    user: String
+    location: String
+    work: String
+    languages: [String!]
+    photos: [String!]
+}
+input ProfileUpdateInput {
+    about: String
+    location: String
+    work: String
+    languages: [String!]
+    photos: [String!]
+}
+extend type Query {
+    profile: Profile! @isAuthenticated @addAccountContext
+}
+extend enum IFIleRefType {
+    Profile
+}
+extend type Mutation {
+    updateProfile(id: ID!, profile: ProfileUpdateInput!): Profile! @isAuthenticated @addAccountContext
+    uploadPhoto(id: ID!, image: Upload!): String! @isAuthenticated @addAccountContext <-- Image are passed
+    deletePhoto(url: String!): Boolean @isAuthenticated @addAccountContext
+}
+```
+
+2. Use graphql code generate to generate queries and mutation and run build on the packages where it changes.
+
+```
+yarn generateGraphql
+```
+
+3. Add model to have reference to the file info
+
+```
+const profileModelSchema = new Schema<IProfileModel>(
+    {
+        user: { type: Schema.Types.ObjectId, ref: 'users', required: true },
+        about: { type: Schema.Types.String, default: '', required: false },
+        location: { type: Schema.Types.String, default: '', required: false },
+        work: { type: Schema.Types.String, default: '', required: false },
+        photos: [{ type: Schema.Types.ObjectId }],   <-----reference ID of the FileInfo
+        languages: [{ type: Schema.Types.ObjectId, ref: 'languages' }],
+    },
+    commonModeSchemaOptions,
+);
+```
+
+4. Update service to use fileinfo service for uploading and retrieving images.
+
+```
+import { inject, injectable } from 'inversify';
+import { IAccountService, TYPES as AccountTypes } from '@adminide-stack/account-api-core';
+import { File, IFileInfoService, IFileInfo, TYPES as FileUploadTypes } from '@container-stack/file-info-core';
+import { IIFIleRefType, IProfile, IProfileInput, IProfileUpdateInput } from '@container-stack/core';
+import { IBaseService, BaseService } from '@common-stack/store-mongo';
+import { TYPES } from '../constants';
+import { ProfileRepository } from '../store/repositories';
+@injectable()
+export class ProfileService
+    extends BaseService<IProfile, IProfileInput, IProfileUpdateInput>
+    implements IBaseService<IProfile, IProfileInput, IProfileUpdateInput>
+{
+    constructor(
+        @inject(TYPES.ProfileRepository)
+        repository: ProfileRepository,
+        @inject(AccountTypes.IAccountService)
+        private readonly accountService: IAccountService,
+        @inject(FileUploadTypes.FileInfoService)
+        private readonly fileInfoService: IFileInfoService,
+    ) {
+        super(repository);
+    }
+    async detachImage(url: string): Promise<boolean> {
+        const image = await this.fileInfoService.getByUrl(url);
+        const profileId = image.ref.toString();
+        const session = await this.repository.model.db.startSession();
+        session.startTransaction();
+        try {
+            await this.update(profileId, {
+                $pull: {
+                    photos: image.id,
+                },
+            } as unknown as IProfileUpdateInput);
+            await this.fileInfoService.delete(image.id);
+            await session.commitTransaction();
+        } catch (e) {
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
+        return true;
+    }
+    async deletePhoto(url: string): Promise<boolean> {
+        console.log('==========DELETE PHOTO===========');
+        console.log(url);
+        const session = await this.repository.model.db.startSession();
+        session.startTransaction();
+        const image = await this.fileInfoService.getByUrl(url);
+        console.log(image);
+        const profileId = image.ref.toString();
+        console.log(profileId);
+        try {
+            await this.fileInfoService.delete(image.id);
+            console.log(image.id);
+            await this.update(profileId, {
+                $pull: {
+                    photos: image.id,
+                },
+            } as unknown as IProfileUpdateInput);
+            await session.commitTransaction();
+        } catch (e) {
+            console.log(e);
+            await session.abortTransaction();
+            throw e;
+        } finally {
+            session.endSession();
+        }
+        return true;
+    }
+    async uploadPhoto(profileId: string, userId: string, image: Promise<File>): Promise<string> {
+        const session = await this.repository.model.db.startSession();
+        session.startTransaction();
+        let storedImage: IFileInfo;
+        try {
+            storedImage = await this.fileInfoService.create({
+                file: image,
+                createdBy: userId,
+                ref: profileId,
+                refType: IIFIleRefType.Profile,
+            });
+            await this.update(profileId, {
+                $push: { photos: storedImage.id },
+            } as unknown as IProfileUpdateInput);
+            await session.commitTransaction();
+        } catch (e) {
+            await session.abortTransaction();
+            if (storedImage?.url) {
+                await this.detachImage(storedImage.url);
+            }
+            throw e;
+        } finally {
+            session.endSession();
+        }
+        return storedImage?.url;
+    }
+}
+```
+
+5. Update resolver for `Profile` type we map the photo reference ID to pull the Photo URLs.
+
+```
+export const resolver = () => ({
+    Profile: {
+        async photos(src, args, { fileInfoService }) {
+            if (!src.photos || src.photos.length === 0) return [];
+            const res = await Promise.all(
+                src.photos.map(async (photo) => {
+                    const p = await fileInfoService.get(photo);
+                    return p;
+                }),
+            );
+            return res;
+        },
+    },
+    Query: {
+        async profile(_, args, { profileService, userContext }) {
+            const profiles = await profileService.getAll({ criteria: { user: userContext.accountId } });
+            if (profiles.length) return profiles[0];
+            const profile = await profileService.create({
+                user: userContext.accountId,
+            });
+            return profile;
+        },
+    },
+    Mutation: {
+        uploadPhoto(_, { id, image }, { profileService, userContext }) {
+            return profileService.uploadPhoto(id, userContext.accountId, image, userContext.accountId);
+        },
+        deletePhoto(_, { url }, { profileService }) {
+            return profileService.deletePhoto(url);
+        },
+        async updateProfile(_, { id, profile }, { profileService }) {
+            console.log('====================UPDATE PROFILE====================');
+            console.log(profile);
+            try {
+                const updated = await profileService.update(id, { ...profile });
+                console.log('====================UPDATED PROFILE====================');
+                console.log(updated);
+                return updated;
+            } catch (err) {
+                console.log(err);
+                return null;
+            }
+        },
+    },
+});
+```
+
+## Frontend Coding
+
+1. Add required dependency `graphql-upload and @container-stack/file-info-core` in the package `package.json` and run `yarn` to install it.
+
+For example if you using in profile package, then in the package.json file add below required packages.
+
+`<sample-stack>/package-modules/profile/browser/package.json`
+
+```
+  "dependencies": {
+    "graphql-upload": "12.0.0",
+    "@container-stack/file-info-core": "0.0.27",
+    .....
+  },
+```
+
+2. Write React Component to upload the image. Below code is based on `Chakra` UI.
+
+```
+import React from 'react';
+import {
+  Box, Button, Flex, Image, AspectRatio, HStack, IconButton, useColorModeValue
+} from '@chakra-ui/react';
+import { DeleteIcon } from '@chakra-ui/icons';
+import { Link as RouterLink } from 'react-router-dom';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ChevronRightIcon } from '@chakra-ui/icons';
+import { DndProvider } from 'react-dnd';
+import {
+  useUploadProfilePhotoMutation,
+  useProfileQuery,
+  useUpdateProfileMutation,
+  useDeleteProfilePhotoMutation,
+} from '../../../../components/generated';
+import { ImageCard } from '../components/ImageCard';
+const ProfilePhoto = () => {
+  const { data: profileInfo, error: profileInfoError } = useProfileQuery({
+    variables: {}
+  });
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [uploadProfilePhoto] = useUploadProfilePhotoMutation();
+  const [updateProfile] = useUpdateProfileMutation();
+  const [deleteProfilePhoto] = useDeleteProfilePhotoMutation();
+  let hiddenInput = null;
+  const deletePhoto = () => {
+    deleteProfilePhoto({
+      variables: {
+        url: profileInfo?.profile?.photos[0].url
+      },
+      update: (cache, { data, errors }) => {
+        if (data) {
+          cache.modify({
+            fields: {
+              profile() { },
+            },
+          });
+        }
+      },
+    })
+  }
+  const handlePhotoSelect = (image: File) => {
+    setIsUploading(true);
+    uploadProfilePhoto({
+      variables: {
+        id: profileInfo?.profile?.id,
+        image
+      },
+      update: (cache, { data, errors }) => {
+        if (data) {
+          cache.modify({
+            fields: {
+              profile() { },
+            },
+          });
+        }
+        setIsUploading(false);
+      },
+    })
+  }
+  const moveImageCard = (dragIndex: number, hoverIndex: number) => {
+    let photos = profileInfo?.profile?.photos?.map(p => p.id);
+    let dragPhoto = photos[dragIndex];
+    photos.splice(dragIndex, 1);
+    photos.splice(hoverIndex, 0, dragPhoto);
+    updateProfile({
+      variables: {
+        id: profileInfo?.profile?.id,
+        profile: {
+          photos,
+        }
+      },
+      update: (cache, { data, errors }) => {
+        if (data) {
+          cache.modify({
+            fields: {
+              profile() { },
+            },
+          });
+        }
+      },
+    })
+  }
+  return (
+    <Box>
+      <DndProvider backend={HTML5Backend}>
+        <Flex px={{ base: '15px', md: '60px', lg: '120px' }} flexDir="column">
+          {/* Breadcrumb */}
+          <Box mt="30px">
+            <Flex direction="row" fontSize="14px" alignItems="center">
+              <RouterLink to="/profile"> Profile </RouterLink>
+              <ChevronRightIcon w={7} h={7} mx={1} />
+              <Box> Profile photos </Box>
+            </Flex>
+            <Box fontWeight="bold" fontSize="32px">
+              Profile photos
+            </Box>
+          </Box>
+          <Box w="100%" maxW="800px" mt="15px">
+            <Box borderWidth="1px" color={useColorModeValue('gray.500', 'gray.300')}>
+              <Box p="20px" backgroundColor={useColorModeValue("gray.200", "gray.600")} w="100%" fontSize="16px" borderBottomWidth={'1px'}>Profile Photo</Box>
+              <HStack w="100%" spacing={5} mb="30px" p="15px">
+                <Box width={{ base: '100%', lg: '250px' }} d="flex" alignItems="center" justifyContent="center">
+                  <Box w="250px" h="250px" position="relative">
+                    <AspectRatio ratio={1} width="250px" position="absolute">
+                      <Image alt="photo" objectFit="cover" src={profileInfo?.profile?.photos && profileInfo?.profile?.photos.length > 0 ? profileInfo.profile.photos[0].url : 'https://a0.muscache.com/defaults/user_pic-225x225.png?v=3'} opacity={0.3}></Image>
+                    </AspectRatio>
+                    <AspectRatio ratio={1} width="250px" position="absolute">
+                      <Image borderRadius="50%" alt="photo" objectFit="cover" src={profileInfo?.profile?.photos && profileInfo?.profile?.photos.length > 0 ? profileInfo.profile.photos[0].url : 'https://a0.muscache.com/defaults/user_pic-225x225.png?v=3'}></Image>
+                    </AspectRatio>
+                     {profileInfo?.profile?.photos && profileInfo?.profile?.photos.length !== 0 && <IconButton position="absolute" aria-label="photo-delete" icon={<DeleteIcon />} top="0px" right="0px" onClick={() => deletePhoto()}></IconButton>}
+                  </Box>
+                </Box>
+                <Box flexGrow={1}>
+                  <Box d="flex" width="100%" flexWrap="wrap">
+                    {profileInfo?.profile?.photos && profileInfo?.profile?.photos?.map((photo, index) => (
+                      <ImageCard
+                        photo={photo.url}
+                        id={photo.url}
+                        index={index}
+                        key={`photo_${index}`}
+                        moveImageCard={moveImageCard}
+                      />
+                    ))}
+                  </Box>
+                  <Box mt="3" mb="3" letterSpacing="wide" fontSize={14} w="100%">
+                    A profile photo that shows your face can help other hosts and guests get to know you. Airbnb requires all hosts to have a profile photo. We don’t require guests to have a profile photo, but hosts can. If you’re a guest, even if a host requires you to have a photo, they won’t be able to see it until your booking is confirmed.
+                  </Box>
+                  <Button
+                    w="100%"
+                    isLoading={isUploading}
+                    loadingText={'Uploading...'}
+                    onClick={() => hiddenInput.click()}
+                  >
+                    Upload a file from your computer
+                  </Button>
+                </Box>
+              </HStack>
+              <input
+                hidden
+                multiple={false}
+                type="file"
+                accept="image/*"
+                ref={(el) => (hiddenInput = el)}
+                onChange={(e) => handlePhotoSelect(e.target.files[0])}
+              />
+            </Box>
+          </Box>
+        </Flex>
+      </DndProvider>
+    </Box>
+  )
+}
+export default React.memo(ProfilePhoto);
+```

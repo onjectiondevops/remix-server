@@ -1,0 +1,23 @@
+---
+meta:
+  title: Xstate
+  description: Xstate
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Xstate...
+headers:
+  Cache-Control: no-cache
+---
+
+## Xstate
+
+for example we name actions in such a way that common one are shared ...
+
+`updateXXXX` -> updates the context, uses assign function
+
+`saveXXXX` -> Save to database; it is unique to server and client
+
+`handleXXX` -> it is some third party calls, it is unique to server and client
+
+and we have context `processing` this is where changes that need for next action dependency.
+For example we need to save some updates to reservation will be saved as `processing.changesToSave` and if action sequence has saveToDatabase then it will look for it and save.

@@ -1,0 +1,55 @@
+---
+meta:
+  title: Source Code Organization
+  description: Source Code Organization
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Source Code Organization...
+headers:
+  Cache-Control: no-cache
+---
+
+## Source Code Organization
+
+Fullstack code consists of a layered and modular 
+
+
+# Layers
+- `packages`: The base packages required for project.
+- `packages-modules`: The entry point to core application based feature. An extended features to the `packages`.
+  - It may have dependencies of `packages`
+  - It wont' have any dependency of any of other modules within `packages-modules` except if it is a `core` package.
+- `servers`: The entry point to server app for remote development. 
+  - It has dependencies of `packages-modules`'s packages and/or `packages` 
+- `portable-devices`: The entry point to native apps like mobile and deskop.
+  - It has dependencies of `packages-modules`'s packages and/or `packages`.
+
+![source-code-organization](/images/source-code/source-code-organization.png)
+
+# Target Environments
+The `module` is partitioned into the following sub packages:
+- `platform`: Defines service injection support and the base services for the Project that are shared accross layers
+- `core`: Source code that only requires basic JavaScript APIs and run in all the other target environments
+- `clent`: Source code that only requires basic Client APIs such as `redux`, `redux-epic`, `apollo-client`, `hooks` without requiring Web APIs like `react`, `dom` etc.
+- `browser`: Source code that requires [Web APIs](https://developer.mozilla.org/en-US/docs/Web/API), eg. DOM, React
+  - may have dependencies on: `core`, `client`
+- `server`: Source code that requires [Node.JS](https://nodejs.org) APIs
+  - may have dependencies on: `core`
+- `mobile`: Source code the requires [React Native](https://reactnative.dev/)
+- `electron`: Source code that requires the [Electron renderer-process](https://github.com/atom/electron/tree/master/docs#modules-for-the-renderer-process-web-page) APIs
+  - may have dependencies on: `core`, `browser`, `client`
+- `electron-main`: Source code that requires the [Electron main-process](https://github.com/atom/electron/tree/master/docs#modules-for-the-main-process) APIs
+  - may have dependencies on: `core`, `node`
+- `browser-extension`: Source code that requires the [Chrome Extension](https://developer.chrome.com/docs/extensions/)
+- `extension`: Source code of extension
+
+You can add additional `target environments` based on the specific third party library
+- `ant-ui`: Source code that requires the [antd components](https://ant.design/components/overview/)
+- `chakra-ui`: Source code that requires the [Chakra-UI components](https://chakra-ui.com/docs/components)
+
+
+![source-code-organization](/images/source-code/source-code-environments.png)
+
+# Build and Run 
+
+We use [lerna](./lerna-build-tools.md) to compile the packages. Read more about it as it is needed to run the project.

@@ -1,0 +1,36 @@
+---
+meta:
+  title: Spin a Close Deployment
+  description: Spin a Close Deployment
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Spin a Close Deployment...
+headers:
+  Cache-Control: no-cache
+---
+
+## Spin a Clone Deployment
+
+# How to run a temporary development deployment?
+
+## Create a clone job in Jenkins with following changes
+
+
+1. Jenkins file changes
+![jenkins-changes](/images/spin-clone-develop-deployment/jenkins-changes.png)
+
+2. Lerna file changes.
+
+Note: The version should be lower than the existing development to avoid conflicts. 
+
+![lerna-changes](/images/spin-clone-develop-deployment/lerna-changes.png)
+
+3. Root `package.json` file changes
+![root-package-changes](/images/spin-clone-develop-deployment/root-package-json-changes.png)
+
+4. Update values-dev.yaml 
+
+Update all paths of the development
+![values-dev-changes](/images/spin-clone-develop-deployment/values-dev-changes.png)
+
+## Add callback url in auth0 application

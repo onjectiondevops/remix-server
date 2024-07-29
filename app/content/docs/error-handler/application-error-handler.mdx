@@ -1,0 +1,43 @@
+---
+meta:
+  title: Application Error Handler
+  description: Application Error Handler
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Application Error Handler...
+headers:
+  Cache-Control: no-cache
+---
+
+## Application Error Handler
+
+It is a wrapper component that wraps around the main component or routes to handle all the application related errors. Along with Application errors it also take care of backend error and renders the fallback component via slot fill.
+
+# Usage
+
+For web applications we can simply import it from `'@admin-layout/ant-ui'` and use it like below
+
+```js
+    <ApplicationErrorHandler  plugins={plugins}>
+       <ThemeProvider  theme={theme}>{routes}</ThemeProvider>
+    </<ApplicationErrorHandler>
+```
+
+In mobile applications you don't need to wrap it around routes instead you can render it along with the routes and make sure to render it inside `NavigationContainer` otherwise it will throw an error while navigating to any screen.
+
+```js
+    <NavigationContainerComponent  configurableRoutes={routes}
+        <PluginArea  />
+        <ApplicationErrorHandler  plugins={plugins}  />
+    </NavigationContainerComponent>
+```
+
+# Working
+
+Application Error handler checks redux state for any application related errors and then it checks all the registered plugins to find if any specific slot/fill is registered against the error, if yes then it renders that slot else it will ignore the error.
+
+We have a common component in admin-layout/client which takes three props `FallbackComponent` which will be rendered incase of backend error, `Slot` if provided it will render that specific slot ( previously needed for mobile since we use it from different package ) and the third parameter is `RendererComponent` which will control the rendering inside ApplicationErrorHandler. Right now `RendererComponent` is required for mobile application use case only as for mobile we don't wrap it around `routes` so it will render that screen on top of existing screens
+
+![Usage](/images/aeh-usage.png)
+
+![Implementation](/images/aeh-implementation.png)

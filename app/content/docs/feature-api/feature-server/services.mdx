@@ -1,0 +1,105 @@
+---
+meta:
+  title: Service
+  description: Service
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Service...
+headers:
+  Cache-Control: no-cache
+---
+
+## Service
+
+Services are top level business logic tier encapsulating business logic. A services performs business related
+operations on one or multiple models. It can involve fetching data from different sources, validating and transforming
+that and in the end
+either storing or returning the result. Services should be `database` agnostic and should not care about which database
+or data sources are being used.
+
+To understand the concept of `Services` we'll take a common example of `AutheticationService` containing all the basic
+method of an authentication workflow. The methods in the class reflects business operations. `AutheticationService`
+consumes`IOAuth0Client` and `IEmailClient` to perform 0Auth and `Email` related operations thus staying completely
+agnostic of
+which
+`0Auth` and `Email` provider is being used underneath.
+
+```typescript
+class AuthenticationService {
+  constructor(
+    private readonly auth0Client: IOAuth0Client,
+    private readonly emailClient: IEmailClient
+  ) {}
+
+  signIn() {}
+
+  signUp() {}
+
+  forgotPassoword() {}
+
+  verifyEmail() {}
+
+  generateToken() {}
+}
+```
+
+In our application, in most scenarios, services needs to fetch and store data models from and into databases. Because
+these operations are so repetitive and needed
+almost everywhere we have a `BaseService` class which basically takes care of all database related logic, so you can
+focus more on what you want to do with the data rather than on how to
+fetch/store that data. The `BaseService` consists on the following methods
+
+```typescript
+export interface IBaseService<T, C = Omit<T, "id">, U = C> {
+  count(conditions?: FilterQuery<Document<T>>): Promise<number>;
+
+  get(id: string): Promise<T>;
+
+  get(conditions?: string | FilterQuery<Document<T>>): Promise<T>;
+
+  getAll(options?: GetAllArgs<Document<T>>): Promise<T[]>;
+
+  getByIds(ids: string[]): Promise<T[]>;
+
+  create(data: C): Promise<T>;
+
+  insert(
+    data: (C | U) & {
+      id?: string;
+    },
+    overwrite?: boolean
+  ): Promise<T>;
+
+  bulkCreate(data: C[]): Promise<T[]>;
+
+  update(id: string, data: U, overwrite?: boolean): Promise<T>;
+
+  delete(id: string): Promise<boolean>;
+
+  delete(conditions: string | FilterQuery<Document<T>>): Promise<boolean>;
+
+  getAllWithCount(options: GetAllArgs<Document<T>>): Promise<{
+    data: T[];
+    totalCount: number;
+  }>;
+}
+```
+
+Any services wishes to use these methods just need to extend the `BaseService`
+
+```typescript
+export class UserService
+  extends BaseService<IUserService>
+  implements IUserService
+{
+  constructor(
+    @inject(TYPES.UserRepository)
+    repository: IUserRepository
+  ) {
+    super(repository);
+  }
+}
+```
+
+In the end, you need to register your service with the Dependency Injection, read more about
+that [here](dependency-injection)

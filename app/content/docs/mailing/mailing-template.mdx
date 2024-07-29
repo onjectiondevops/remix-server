@@ -1,0 +1,152 @@
+---
+meta:
+  title: Mailing Template
+  description: Mailing Template
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Mailing Template...
+headers:
+  Cache-Control: no-cache
+---
+
+## Mailing Templates
+
+#### Create a Template
+
+Under your module's `src` folder, create a new folder named `migration` (if haven't already). Define your `ejs` mail
+template under this directory.
+
+##### Create neccessary types
+
+Create a unique template name.
+
+> packages-modules/account-api/server/src/graphql/schema/mail-services.graphql
+
+```typescript
+extend enum MailTemplateId {
+    """ Prefix with Db to make sure it look into the database """
+    DbTeamInivitationId
+}
+```
+
+and run `yarn generateGraphql` so it generates `types` in the core package.
+
+Make sure to build the core package where it get generated.
+
+#### Define a migration
+
+Define your migration file, import your newly defined template and define both `up` and `down` methods.
+
+> packages-modules/account-api/server/src/migrations/holiday-greetings-mail-template.ts
+
+```typescript
+import { IMailTemplateId } from '@adminide-stack/core';
+import { MailTemplateMigration } from '@container-stack/mailing-api-server';
+import { injectable } from 'inversify';
+import { config } from '../config';
+
+const template = require('./template-name.ejs'); // replace with actual template-name
+
+@injectable()
+export class HolidayGreetingsTemplateMigration extends MailTemplateMigration {
+    protected NAMESPACE = config.NAMESPACE;
+
+    protected VERSION = '20220502'; <-- CURRENT DATE IN FORMAT 'YYYYMMDD'. Any time change in template make sure to change this to redeploy
+
+    protected name = IMailTemplateId.HolidayGreetingsTemplateId;
+
+    protected templatePayload(): Record<string, unknown> {
+        return {
+            description: 'Holiday Greeting',
+            html: template.default,
+        };
+    }
+}
+```
+
+#### PS
+
+Make sure that you define unique `name` for your template
+
+#### Bind to Container
+
+Bind your newly added migration with container so that it gets migrated when server stars
+
+> packages-modules/account-api/server/src/containers/module.ts
+
+```typescript
+
+    bind('MongodbMigration')
+        .to(<Your-Template-Class>)
+        .whenTargetNamed(<Your-Template-Class>.name);
+```
+
+#### Sending Email
+
+In any service where you want to call to `sendEmail` for example
+
+> packages-modules/billing-api/server/src/plugins/stripe-moleculer-service.ts
+
+```typescript
+// These import can be from '@container-stack/mailing-api' as well
+import {
+  ISendMail_Input,
+  IMoleculerServiceName,
+  IMailServiceAction,
+} from "@adminide-stack/core";
+
+class ExampleService {
+  @inject(CommonType.MOLECULER_BROKER)
+  protected broker: ServiceBroker;
+  constructor() {}
+
+  private async anyOtherFunctionCallingSendEmail(request, transport) {
+    try {
+      const emailResponse = await this.broker.call(
+        `${IMoleculerServiceName.MailService}.${IMailServiceAction.SendEmail}`,
+        {
+          request: {
+            from: config.MAIL_SEND_DEFAULT_EMAIL,
+            to,
+            topic: "",
+            templateId: IMailTemplateId.BillingNotificationId,
+            namespace: config.NAMESPACE,
+            variables: {
+              // add any variables that you need to pass to template.
+              text: variables.subject,
+              messageHtml: "",
+              message: "",
+              ...variables,
+            },
+          } as ISendMail_Input,
+          transport,
+        }
+      );
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
+}
+```
+
+Add required email environment variables in `config`
+
+```typescript
+export const config = envalid.cleanEnv<IConfig>(process.env, {
+    ...
+    MAIL_SEND_DEFAULT_EMAIL: str(),
+    EMAIL_USER: str(),
+    ...
+});
+```
+
+##### We support following operations on `mailer-service`
+
+1. Send
+2. SendBulkEmail
+3. Query
+4. Report
+5. CreateTemplate
+6. SaveTemplate
+7. DropTemplate
+8. List

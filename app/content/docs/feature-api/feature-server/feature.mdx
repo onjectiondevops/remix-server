@@ -1,0 +1,66 @@
+---
+meta:
+  title: Feature Server API
+  description: Feature Server API
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Feature Server API...
+headers:
+  Cache-Control: no-cache
+---
+
+## Feature Server API
+
+Similar to Feature Browser API, the backend Feature API support all that need to run the backend application.
+
+It is opiniated and it supports 
+- graphql-server such as resolvers, schema, directives, datasource
+- express middleware
+- preferences configuration
+- permissions configuration
+- policy configuration
+- roles configuraton
+- Graphql Rules
+- Moleculer broker services
+
+Each of these packaged module is used in the `backend-server` like below
+
+```js
+import CounterModule from '@sample-stack/counter-module-server';
+import AccountModule from '@sample-stack/account-module-server';
+import PaymentModule from '@sample-stack/payment-module-server';
+
+const feature = new Feature(DefaultFeature, CounterModule, AccountModule, PaymentModule);
+```
+
+For example provide all the required configuration to the `Feature` like below. 
+
+```js
+const module = new Feature({
+    schema,
+    createDirectivesFUnc: paymentContextDirectives,
+    createDataSourceFunc: () => ({
+        stripeManager: new StripeDataSourceService(),
+    }),
+    createResolversFunc: resolver,
+    createServcieFunc: billingSErviceFunc,
+    middleware: stripeWebhookMiddleware,
+    createContainerFunc: [billingPorxyModule],
+    createHemeraContainerFunc: [billingModule],
+    postStartFunc: [(container, ctx) => initStripe(container, ctx)],
+    addBrokerClientServiceClass: [
+        BillingMoleculerService,
+    ],
+    createPreference: settings,
+    rolesUpdate: {
+        overwriteRolesPermissions: rolePermissionOverwrite,
+    },
+    addPermissions: {
+        createPermissions: billingRoleContribution,
+    },
+    addPolicies: {
+        createPolicies: BillingPolicyContribution,
+    },
+    rules,
+});
+```

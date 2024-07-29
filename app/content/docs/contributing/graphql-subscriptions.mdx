@@ -1,0 +1,70 @@
+---
+meta:
+  title: Grapgql Subscriptions
+  description: Grapgql Subscriptions
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Grapgql Subscriptions...
+headers:
+  Cache-Control: no-cache
+---
+
+## How to write graphql subscriptions
+
+
+1. Write Graphql Service
+
+```
+// services.graqphl
+
+"""
+ Subscription event for timer
+"""
+enum TimeTrackerPubSubEvents {
+    TimeTrackerCreated
+    TimeTrackerUpdated
+    TimeTrackerConfigurationUpdate
+}
+
+// timerecord.graphql
+extend type Subscription {
+  SubscribeToTimeTracker(orgNameFilter: string, userId: String): TimeRecord
+}
+
+
+// resolvers
+
+import {withFilter} from 'graphql-subscriptions';
+
+export const resolver = (options) => ({
+  ....
+  Subscription: {
+    SubscribeToOrganizationContext: {
+      subscribe: withFilter(
+        () =>
+          options.pubsub.asyncIterator([
+            ITimeRecordPubSubEvents.TimeRecordCreated,
+            ITimeRecordPubSubEvents.TimeRecordUpdated,
+          ]),
+        async (payload, variables, context: {}) =>
+          payload.SubscribeToOrganizationContext.orgId === variables.orgNameFilter &&
+          payload.SubscribeToOrganizationContext.userId === variables.userId,
+      ),
+    },
+  },
+
+})
+
+
+
+/// service file
+
+
+  public async createTimeRecord(userId: string, orgId: string, request: ITimeRecordRequest) {
+    const data = await this.timeRecordRepository.createTimeRecord(userId, orgId, request);
+    this.pubsub.publish(ITimeRecordPubSubEvents.TimeRecordCreated, { SubscribeToTimeTracker: data });
+    return data;
+  }
+
+
+```

@@ -1,0 +1,73 @@
+---
+meta:
+  title: Git Subtree Sharing
+  description: Git Subtree Sharing
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Git Subtree Sharing...
+headers:
+  Cache-Control: no-cache
+---
+
+## Sharing packages to remote with splash option
+
+- In the source create subtree branch using `split` for the directory we wan to share
+
+```
+git clone https://github.com/CDEBase/fullstack-pro.git fullstack-source
+git subtree split --prefix=packages-modules/counter/browser --branch=split-packages-modules/counter/browser --rejoin --squash
+```
+
+- The target
+
+```
+mkdir fullstack-target
+cd fullstack-target
+touch file1.txt file2.txt file3.txt
+git init
+git add .
+git commit -m 'first commit'
+```
+
+- Add subtree
+
+```
+git subtree add --prefix=packages-modules/counter/browser ../fullstack-source split-packages-modules/counter/browser
+```
+
+### To push changes from target to source
+
+- create a file in subtree
+
+```
+touch packages-modules/counter/browser/shared_file.txt
+git add .
+git commit -m 'shared file;
+```
+
+- push the file source
+
+```
+git subtree push --prefix=packages-modules/counter/browser ../fullstack-source split-packages-modules/counter/browser
+```
+
+### To merge the subtree changes to the source project master
+
+```
+cd fullstack-source
+git subtree pull --prefix=packages-modules/counter/browser ../fullstack-source split-packages-modules/counter/browser --squash
+```
+
+### To push the changes from source to target project
+
+```
+cd fullstack-source
+vi packages-modules/counter/browser/shared_file.test
+git subtree split --prefix=packages-modules/counter/browser --branch=split-packages-modules/counter/browser --rejoin --squash
+```
+
+- from target pull those changes
+
+```
+git subtree pull --prefix=packages-modules/counter/browser ../fullstack-source split-packages-modules/counter/browser
+```

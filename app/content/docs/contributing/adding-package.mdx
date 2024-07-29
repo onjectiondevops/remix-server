@@ -1,0 +1,24 @@
+---
+meta:
+  title: Adding package to sub packages
+  description: Adding package to sub packages
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Adding package to sub packages...
+headers:
+  Cache-Control: no-cache
+---
+
+## Adding package to sub packages or to servers or to devices
+
+We use [Lerna Hoisting](https://github.com/lerna/lerna/blob/9dc2bc5a9e200de3e8b5e83bbd8cec1fddfc2916/doc/hoist.md) feature. This makes sure the NPM package at most installed only once in the root `node_modules`.  However, we should not place npm dependency under root `package.json`. The dependency should go under the package that needs it. For Example, if `servers/backend-server` requires the package then the dependency should be added to its `package.json` but not to the root package.json. Once added follow the below steps to install the package.
+
+
+Run
+1. `npm run lerna`. This should automatically install the new npm package as it reads from all packages or servers  `package.json`. 
+2. If above one didn't work then install from the root without save option
+
+```
+npm i apollo-server@<version> --no-save
+```
+ 

@@ -1,0 +1,140 @@
+---
+meta:
+  title: Feature Browser API
+  description: Feature Browser API
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Feature Browser API...
+headers:
+  Cache-Control: no-cache
+---
+
+# Feature Browser API
+
+Feature is a fractal-based modular architecture. It is like a module federation to create independent packages that have references to all that need to run a fullstack application. Each of these module should have code limited to its requirement that way we achieve seperation of concerns.
+
+It is opiniated and it supports following for client state management
+
+- redux
+- redux-persist
+- apollo-client
+- redux-observable
+
+Components are rendered only through `react-router`, for that we pass `routeConfig`.
+
+Dynamic Components are provided using `slot-fill` logic using `componentFillPlugins` configuration.
+
+Third-party Scripts can be inserted into HTML page as well.
+
+Each of these packaged module is used in the `frontend-server` like below
+
+```js
+import counterModule from "@sample-stack/counter-module-browser";
+import accountModule from "@sample-stack/account-module-browser";
+import paymentModule from "@sample-stack/payment-module-browser";
+
+const features = new Feature(
+  FeatureWithRouterFactory,
+  counterModule,
+  accountModule,
+  paymentModule
+);
+```
+
+The `frontend-server` have all required logic to consolidate the `reducers`, `epics`, `apollo-client configuration`, `react-router configuration` etc to run the application.
+
+For example provide all the required configuration to the `Feature` like below.
+
+```js
+const module = new Feature({
+  /**
+        Customizing ID in the apollo cache.
+    **/
+  dataIdFromObject,
+  /**
+        load apollo-client state management. 
+    **/
+  clientStateParams: { resolvers, typeDefs: schema },
+  /**
+        load redux-observables to manage the client state.
+    **/
+  epic: [onUserAccountNotFound],
+  /**
+        load react-router configuration to display component based on navigation. 
+        for more information check [Routing](./routing.mx)
+    **/
+  routeConfig: filteredRoutes,
+  componentFillPlugins: [
+    {
+      name: "teams-contribution",
+      render: TeamsContribution,
+    },
+  ],
+  /**
+     load any scripts when this Feature Module is used.
+    **/
+  scriptsInsert: "https://js.stripe.com/v3/",
+  createContainerFunc: [Auth0Module],
+  /**
+     load reducers to the Redux Store when this Feature Module is used.
+    **/
+  reducer: {
+    user: userReducer,
+    redirectRoutes: redirectRoutesReducer,
+    authErrors: authErrorsReducer,
+  },
+  /**
+        By default all redux state is persisted using redux-persist, if you need to manipulate the persist state
+        add configuration here. 
+    **/
+  reduxPersistTransforms: [blacklistErrorFilter, blacklistUserFilter],
+});
+```
+
+We don't need to put the `redux` store creation nor apollo-client setup in the Module as this action will be taken care at the higher level (frontend-server).
+
+### Client State Management
+
+Applciation state can be managed using Apollo Link State and Redux.
+
+#### Redux
+
+Support [redux's reducers](https://redux.js.org/usage/structuring-reducers/basic-reducer-structure)
+Example:
+
+```js
+const module = new Feature({
+    reducer: { user: userReducer, redirectRoutes: redirectRoutesReducer, authErrors: authErrorsReducer },
+    ....
+});
+```
+
+#### Apollo Client State Management
+
+Support [interacting with local data in Apollo Client](https://www.apollographql.com/docs/react/local-state/local-state-management/)
+
+Example:
+
+```js
+const module = new Feature({
+    clientStateParams: { resolvers, typeDefs: schema, typePolicies },
+    ....
+});
+```
+
+##### dataIdFromObject
+
+Support cusotmizing the ID in the apollo cache. More infromation is [here](https://www.apollographql.com/docs/react/caching/cache-configuration/#dataidfromobject)
+
+#### Epic
+
+Support [redux-observable](https://redux-observable.js.org/docs/basics/Epics.html)
+
+Example:
+
+```js
+const module = new Feature({
+    epic: [onUserAccountNotFound],
+    ....
+});
+```

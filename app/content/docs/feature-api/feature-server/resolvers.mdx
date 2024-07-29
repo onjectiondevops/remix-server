@@ -1,0 +1,126 @@
+---
+meta:
+  title: Resolvers
+  description: Resolvers
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Resolvers...
+headers:
+  Cache-Control: no-cache
+---
+
+## Resolvers
+
+GraphQL Server needs to know how to populate data for every field in your schema so that it can respond to requests for
+that data.
+To accomplish this, it uses resolvers.
+
+_A resolver is a function that's responsible for populating the data for a single field in your schema_. It can populate
+that data
+in any way you define, such as by fetching data from a back-end database or a third-party API. A resolver is the key
+architectural component that connects GraphQL fields, graph edges, queries, mutations, and subscriptions to their
+respective data sources and micro-services. Read more about
+resolvers [here](https://www.apollographql.com/docs/apollo-server/data/resolvers/)
+
+> If you don't define a resolver for a particular field, Apollo Server automatically defines
+> a [default resolver](https://www.apollographql.com/docs/apollo-server/data/resolvers/#default-resolvers) for it.
+
+We use `Schema First` approach which requires us to define GraphQL schema before we write any code for it. So in order to
+create new GraphQL types, query or mutation, you need to add them to Schema. Create your schema file under `graphql/schema/<file-name.gql`
+
+```graphql
+
+type User{}
+type Users{
+    totalCount: Int!,
+    data: [User!]
+}
+
+input CreateInput{}
+input UpdateUserInput{}
+
+extend type Query{
+    # ... existing queries
+    user(id:ID!): UserModel!
+    users(id:ID!): UserPageModel!
+}
+
+extend type Mutation{
+    createUser(user:CreateUserInput!): UserModel!
+    updateUser(id:ID!, user: UpdateUserInput!): UserModel!
+    deleteUser(id:ID!): Boolean!
+}
+```
+
+Everytime you make change to GraphQL schema, we need to re generate typescript definitions using the following command
+
+```shell
+npm run generateGraphql
+```
+
+Next, let's add resolver implementation, by convention the all resolver definitions resides under `graphql/resolvers`.
+
+```typescript
+// graphql/resovlers/user-resolver.ts
+
+export const userResolver = (): IResolvers<IContext> => ({
+  User: {
+    // # Nested resolvers for relations
+    async posts(user, _, args, { postService }) {
+      const { data, totalCount } = await userService.getAllWithCount({
+        ...args,
+        criteria: {
+          ...args.criteria,
+          user: user.id,
+        },
+      });
+      return {
+        totalCount,
+        data,
+      };
+    },
+  },
+  Query: {
+    async users(_, args, { userService }) {
+      const { data, totalCount } = await userService.getAllWithCount(args);
+      return {
+        totalCount,
+        data,
+      };
+    },
+    user(_, { id }, { userService }) {
+      return userService.get(id);
+    },
+  },
+  Mutation: {
+    createUser(_, { user }, { userService }) {
+      return userService.create(user);
+    },
+    updateUser(_, { id, user }, { userService }) {
+      return userService.update(id, user, false);
+    },
+    deleteUser(_, { id }, { userService }) {
+      return userService.delete(id);
+    },
+  },
+});
+```
+
+<blockquote>
+Note:
+In order to use any service in the resolver first, you need to register your service in
+the [GraphQL context](https://the-guild.dev/graphql/modules/docs/essentials/context).
+Add it under `createServiceFunc` of [Feature](feature.md) API. If it does not already exist create one.
+
+```typescript
+const createServiceFunc = (container: interfaces.Container): IService => ({
+  userService: container.get<IUserService>(TYPES.UserService),
+});
+
+export default new Feature({
+  // rest of the configutations
+  createServiceFunc,
+});
+```
+
+</blockquote>

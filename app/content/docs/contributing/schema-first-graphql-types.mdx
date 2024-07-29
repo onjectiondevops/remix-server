@@ -1,0 +1,37 @@
+---
+meta:
+  title: Schema First Graphql Types
+  description: Schema First Graphql Types
+date: "2023-06-02T00:00:00"
+updated: "2024-06-02T00:00:00"
+excerpt: Schema First Graphql Types...
+headers:
+  Cache-Control: no-cache
+---
+
+## Schema First Graphql Types
+
+We use [GraphQL Code Generator](https://github.com/dotansimha/graphql-code-generator) to generate `types`.
+
+The `graphql` schema is designed first and placed in the `server` side package.
+
+![graphl-folder-backend](/images/graphql/graphql-folder-backend.png)
+
+We don't place any built-in `query or mutation or subscription` within the Component. Instead we add the `queries` or `mutations` or `subscriptions` under `graphql` folder in the clien package (either on `browser` or `client` package). These will have `.gql` extension.
+
+![graphql-folder-with-gql](/images/graphql/graphql-folder-with-gql.png)
+
+The generated Wrapper component will be used in the component. The generated files can be determined by looking into `codegen.yaml` file which is at the `root` of the project.
+
+## To update to exising Graphql Schema follow the steps.
+
+1. Update the Graphql Schema first with required methods.
+
+2. Generate Graphql Types by running `npm run genreateGraphql`
+
+3. The generated code usually added to `<@sample-stack>/core` package and this package should be imported to use it. In order to auto build when the files changes in the package, make sure `watch` is run on that package.
+
+4. Write `resolvers` for the `Mutations | Query | Subscription` that are defined in the graphql schema.
+
+The following video shows in-action
+[https://youtu.be/F1UZdcpjx3w](https://youtu.be/F1UZdcpjx3w)

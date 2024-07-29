@@ -1,0 +1,27 @@
+---
+meta:
+  title: Error Handling
+  description: Error Handling
+date: '2023-06-02T00:00:00'
+updated: '2024-06-02T00:00:00'
+excerpt: Error Handling...
+headers:
+  Cache-Control: no-cache
+---
+
+## Error Handling
+
+We have two types of errors, Graphql Errors and Network errors. Errors like server not responding or errors produced in middleware are all network errors whereas errors produced due to invalid query syntax etc are graphql errors. To read more about these two types follow this [link](https://www.apollographql.com/docs/react/data/error-handling/)
+
+
+### Error Link: 
+ 
+We are using multiple Apollo links to facilitate the modification of data between Apollo Client and Backend Server. Among these links one is ErrorLink that handles the error and modifies the result before it reaches to the frontend  and this is how the Implementations of Error Link look like 
+
+![error-link](/images/error-link.png)
+
+Once we receive the error, we get the actionName from error extension and dispatches the redux action on basis of actionName. We construct the redux action type using actionName and set the payload as the error itself. This is what our Error looks like.
+
+![error-link](/images/error-sample.png)
+
+This is how we construct error. We set the actionName as the type of action that we want to dispatch to redux store and payload is the action payload.
