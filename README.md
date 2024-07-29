@@ -121,13 +121,13 @@ To run your Remix app locally, first, copy `.env.example` to `.env` and configur
 Next, make sure your project's local dependencies are installed:
 
 ```bash
-npm install
+yarn install
 ```
 
 Afterwards, start the Remix development server like so:
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 Open up [http://localhost:3000](http://localhost:3000) and you should be ready to go!
