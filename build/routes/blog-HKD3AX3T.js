@@ -1,0 +1,1 @@
+import{b as e}from"/build/_shared/chunk-4HXKWYDW.js";import{c as o}from"/build/_shared/chunk-Q3IECNXJ.js";var r=o(e());function t(){return(0,r.jsx)("div",{children:"Blog Page Goes Here"})}var f=t;export{f as default};

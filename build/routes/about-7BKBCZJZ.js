@@ -1,0 +1,1 @@
+import{b as e}from"/build/_shared/chunk-4HXKWYDW.js";import{c as o}from"/build/_shared/chunk-Q3IECNXJ.js";var t=o(e());function r(){return(0,t.jsx)("div",{children:"About US Page Goes Here"})}var f=r;export{f as default};
